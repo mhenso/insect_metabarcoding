@@ -1,1 +1,1 @@
-
+This folder contain raw reads that can be dowloaded from NCBI
