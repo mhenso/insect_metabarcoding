@@ -2,7 +2,6 @@
 # OTU pipeline 
 # Several softwares that we used are cutadapt
 
-
 ./Sihaloho et al
 ├── COI_252_samples
 ├── cutadapt
@@ -11,25 +10,6 @@
 │ ├── output
 │ │ └── otus_finalize
 │ └── stitched
-├── git_databases
-│ ├── data
-│ ├── otus_hpcc
-│ ├── results
-│ │ ├── global
-│ │ │ ├── blast300
-│ │ │ ├── confirm_coordinate
-│ │ │ └── usearch
-│ │ ├── local
-│ │ │ ├── blast300
-│ │ │ └── usearch
-│ │ └── regional
-│ │     ├── blast300
-│ │     └── usearch
-│ ├── results_blastn300
-│ └── results_tblastx300
-└── git_indiana_bats
-    ├── rds
-    └── results
 
 
 # create sample list file
@@ -169,35 +149,3 @@ grep -w -f otus97.final.300.id ../otutab.txt > ./otutab.300.txt
 # So, our final files
 ## otutab file is otutab.300.txt, and 
 ## refseq are otus97.final.300.fa (ungapped) and otus97.200.rest.min300.afa (gapped)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
