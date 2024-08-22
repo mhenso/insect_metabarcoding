@@ -13,11 +13,11 @@
 │ ├── data
 │ ├── otus_hpcc
 │ ├── results
-│ │ ├── global
+│ │ ├──global
 │ │ │ ├── blast300
 │ │ │ ├── confirm_coordinate
 │ │ │ └── usearch
-│ │ ├── local
+│ │ ├──local
 │ │ │ ├── blast300
 │ │ │ └── usearch
 │ │ └── regional
