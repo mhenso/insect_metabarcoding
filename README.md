@@ -30,4 +30,4 @@
     └── results
 ```
 
-![](./docs/Figure_1.png)
+![](./docs/Figure_1_small.png)
