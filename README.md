@@ -28,5 +28,6 @@
 └── git_indiana_bats
     ├── rds
     └── results
-
 ```
+
+![](./docs/Figure_1.png)
