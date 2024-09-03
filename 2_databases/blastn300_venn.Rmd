@@ -1,0 +1,364 @@
+---
+title: "Blastn300 Venn"
+output:
+  html_notebook:
+    code_folding: show
+    df_print: paged
+    fig_retina: 1
+    fig_width: 12
+    fig_height: 8
+    fig_caption: yes
+    toc: yes
+    toc_depth: 6
+    toc_float:
+      collapsed: no
+---
+
+```{css, echo=FALSE}
+.scroll-200 {
+  max-height: 200px;
+  overflow-y: auto;
+  background-color: inherit;
+}
+```
+
+```{css, echo=FALSE}
+.tocify .tocify-header {
+  #position: fixed;
+  #top: 50px;
+  #left: 50px;
+  width: 350px;
+  #height: 400px;
+  }
+```
+
+# clean workspace
+```{r}
+rm(list=ls())
+gc()
+```
+# blastn
+## import files
+```{r}
+blst_mydb = read.table("./results_blastn300/local.out.top")
+blst_mydb = blst_mydb[order(blst_mydb$V1), ]
+blst_imdb = read.table("./results_blastn300/regional.out.top")
+blst_imdb = blst_imdb[order(blst_imdb$V1), ]
+blst_global = read.table("./results_blastn300/global.out.top")
+blst_global = blst_global[order(blst_global$V1), ]
+
+dim(blst_mydb)[1] ; dim(blst_imdb)[1] ; dim(blst_global)[1]
+
+temp = inner_join(blst_mydb, blst_imdb, by="V1")
+temp2 = inner_join(temp, blst_global, by="V1")
+blst_otus = temp2$V1
+rm(temp, temp2)
+
+blst_mydb2 = subset(blst_mydb, V1 %in% blst_otus )
+blst_imdb2 = subset(blst_imdb, V1 %in% blst_otus)
+blst_global2 = subset(blst_global, V1 %in% blst_otus)
+
+dim(blst_mydb2)[1] ; dim(blst_imdb2)[1] ; dim(blst_global2)[1]
+rm(list = grep("2", ls(), value=TRUE, invert = TRUE))
+```
+
+## Prepare dataframe
+```{r}
+library(gridExtra)
+library(VennDiagram)
+
+top = data.frame("otus"=blst_mydb2$V1, 
+                 # local
+                 "V15.loc"=blst_mydb2$V15, 
+                 "V16.loc"=blst_mydb2$V16, 
+                 "V17.loc"=blst_mydb2$V17, 
+                 "V18.loc"=blst_mydb2$V18, 
+                 # regional
+                 "V15.reg"=blst_imdb2$V15, 
+                 "V16.reg"=blst_imdb2$V16, 
+                 "V17.reg"=blst_imdb2$V17, 
+                 "V18.reg"=blst_imdb2$V18, 
+                 # global
+                 "V15.glo"=blst_global2$V15, 
+                 "V16.glo"=blst_global2$V16, 
+                 "V17.glo"=blst_global2$V17, 
+                 "V18.glo"=blst_global2$V18)
+dim(blst_mydb2)[1] ; dim(blst_imdb2)[1] ; dim(blst_global2)[1]
+
+top$sp = top$V18.loc == top$V18.reg & top$V18.reg == top$V18.glo
+top$ge = top$V17.loc == top$V17.reg & top$V17.reg == top$V17.glo
+top$fa = top$V16.loc == top$V16.reg & top$V16.reg == top$V16.glo
+top$or = top$V15.loc == top$V15.reg & top$V15.reg == top$V15.glo
+
+```
+
+## Venn from Order to Species
+```{r, fig.showtext=TRUE, fig.width=12, fig.height=12}
+venn.sp <- draw.triple.venn(
+  area1 = dim(blst_mydb2)[1], # local
+  area2 = dim(blst_imdb2)[1], # regional
+  area3 = dim(blst_global2)[1], # global
+  n12 = length(which(top$V18.loc == top$V18.reg)),
+  n23 = length(which(top$V18.reg == top$V18.glo)),
+  n13 = length(which(top$V18.loc == top$V18.glo)),
+  n123 = length(which(top$sp == TRUE)),
+  fill = c("#fbada7", "#66d688", "#a0c4ff"),
+  lty = "blank",
+  cex = 2.5,
+  cat.cex = 3, cat.default.pos = "outer", 
+  cat.pos = c(-27, 27, 135),
+  cat.dist = c(0.055, 0.055, 0.055), cat.fontfamily = "Calibri"
+)
+p_sp = grid.arrange(gTree(children = venn.sp), bottom =textGrob("Species", gp=gpar(cex=3.5, fontfamily="Calibri", fontface="bold"), y= 1))
+
+
+venn.ge <- draw.triple.venn(
+  area1 = 3197, # local
+  area2 = 3197, # regional
+  area3 = 3197, # global
+  n12 = length(which(top$V17.loc == top$V17.reg)), #12
+  n23 = length(which(top$V17.reg == top$V17.glo)), #23
+  n13 = length(which(top$V17.loc == top$V17.glo)), #13
+  n123 = length(which(top$ge == TRUE)), #n123
+  fill = c("#fbada7", "#66d688", "#a0c4ff"),
+  lty = "blank",
+  cex = 2.5,
+  cat.cex = 3, cat.default.pos = "outer", 
+  cat.pos = c(-27, 27, 135),
+  cat.dist = c(0.055, 0.055, 0.055), cat.fontfamily = "Calibri"
+)
+p_ge = grid.arrange(gTree(children = venn.ge), bottom =textGrob("Genus", gp=gpar(cex=3.5, fontfamily="Calibri", fontface="bold"), y= 1))
+
+venn.fa <- draw.triple.venn(
+  area1 = 3197, # local
+  area2 = 3197, # regional
+  area3 = 3197, # global
+  n12 = length(which(top$V16.loc == top$V16.reg)), #12
+  n23 = length(which(top$V16.reg == top$V16.glo)), #23
+  n13 = length(which(top$V16.loc == top$V16.glo)), #13
+  n123 = length(which(top$fa == TRUE)), #n123
+  fill = c("#fbada7", "#66d688", "#a0c4ff"),
+  lty = "blank",
+  cex = 2.5,
+  cat.cex = 3, cat.default.pos = "outer", 
+  cat.pos = c(-27, 27, 135),
+  cat.dist = c(0.055, 0.055, 0.055), cat.fontfamily = "Calibri"
+)
+p_fa = grid.arrange(gTree(children = venn.fa), bottom =textGrob("Family", gp=gpar(cex=3.5, fontfamily="Calibri", fontface="bold"), y= 1))
+
+venn.or <- draw.triple.venn(
+  area1 = 3197, # local
+  area2 = 3197, # regional
+  area3 = 3197, # global
+  n12 = length(which(top$V15.loc == top$V15.reg)), #12
+  n23 = length(which(top$V15.reg == top$V15.glo)), #23
+  n13 = length(which(top$V15.loc == top$V15.glo)), #13
+  n123 = length(which(top$or == TRUE)), #n123
+  fill = c("#fbada7", "#66d688", "#a0c4ff"),
+  lty = "blank",
+  cex = 2.5,
+  cat.cex = 3, cat.default.pos = "outer", 
+  cat.pos = c(-27, 27, 135),
+  cat.dist = c(0.055, 0.055, 0.055), cat.fontfamily = "Calibri"
+)
+p_or = grid.arrange(gTree(children = venn.or), bottom =textGrob("Order", gp=gpar(cex=3.5, fontfamily="Calibri", fontface="bold"), y= 1))
+```
+
+
+```{r, fig.showtext=TRUE, fig.width=48, fig.height=12}
+venn_blastn =  grid.arrange(arrangeGrob(p_or, p_fa, p_ge, p_sp, ncol = 4, nrow = 1), # First row with 3 plots in 3 different columns
+             # arrangeGrob(p4,p5, ncol = 2),    # Second row with 2 plots in 2 different columns
+             # arrangeGrob(p6,p7, ncol = 2),    # Third row with 2 plots in 2 different columns
+             # arrangeGrob(p_or, p_fa, p_ge, p_sp, ncol = 4, nrow = 1), 
+             # arrangeGrob(lg),  heights = c(4,4,1),                        # Number of rows
+             top = textGrob("blastn", gp=gpar(cex=5, fontfamily="Calibri", fontface="bold"),x=0.05, y= -0.25)
+             # rectGrob(gp=gpar(lwd=10, col = "red", fill=NA)))
+             )
+
+# gb <- rectGrob(height = .98, width = .98, gp = gpar(lwd = 2, col = "red", fill = NA))
+# gb = rectGrob(gp=gpar(lwd=2, col = "red", fill=NA))
+gb = rectGrob(gp=gpar(lwd=4, col = "black", fill=NA))
+
+venn_blastn = grid.arrange(gTree(children = gList(venn_blastn, gb)))
+
+# venn_blastn = grid.arrange(gtable::gtable_add_grob(
+#   arrangeGrob(p_or, p_fa, p_ge, p_sp, ncol = 4, nrow = 1),
+#                                                    rectGrob(gp=gpar(lwd=10, col = "red", fill=NA)), 1, 1, 1, 4),
+#                            top = textGrob("blastn", gp=gpar(cex=5, fontfamily="Calibri", fontface="bold"),x=0.05, y= -0.2)
+#                            )
+
+
+# venn_blastn_blue = grid.arrange(gtable::gtable_add_grob(arrangeGrob(venn_blastn),
+#                                      rectGrob(gp=gpar(lwd=10, col = "red", fill=NA)), 1, 1, 1, 1))
+
+```
+```{r}
+rm(list = grep("venn_blastn", ls(), value=TRUE, invert = TRUE))
+```
+
+# tblastx
+## import files
+```{r}
+blst_mydb = read.table("./results_tblastx300/local.out.top")
+blst_mydb = blst_mydb[order(blst_mydb$V1), ]
+
+blst_imdb = read.table("./results_tblastx300/regional.out.top")
+blst_imdb = blst_imdb[order(blst_imdb$V1), ]
+
+blst_global = read.table("./results_tblastx300/global.out.top")
+blst_global = blst_global[order(blst_global$V1), ]
+
+dim(blst_mydb)[1] ; dim(blst_imdb)[1] ; dim(blst_global)[1]
+
+temp = inner_join(blst_mydb, blst_imdb, by="V1")
+temp2 = inner_join(temp, blst_global, by="V1")
+blst_otus = temp2$V1
+rm(temp, temp2)
+
+blst_mydb2 = subset(blst_mydb, V1 %in% blst_otus )
+blst_imdb2 = subset(blst_imdb, V1 %in% blst_otus)
+blst_global2 = subset(blst_global, V1 %in% blst_otus)
+```
+
+## Prepare data frame
+```{r, fig.width=12, fig.height=12}
+library(gridExtra)
+library(VennDiagram)
+
+top = data.frame("otus"=blst_mydb2$V1, 
+                 # local
+                 "V15.loc"=blst_mydb2$V15, 
+                 "V16.loc"=blst_mydb2$V16, 
+                 "V17.loc"=blst_mydb2$V17, 
+                 "V18.loc"=blst_mydb2$V18, 
+                 # regional
+                 "V15.reg"=blst_imdb2$V15, 
+                 "V16.reg"=blst_imdb2$V16, 
+                 "V17.reg"=blst_imdb2$V17, 
+                 "V18.reg"=blst_imdb2$V18, 
+                 # global
+                 "V15.glo"=blst_global2$V15, 
+                 "V16.glo"=blst_global2$V16, 
+                 "V17.glo"=blst_global2$V17, 
+                 "V18.glo"=blst_global2$V18)
+top$sp = top$V18.loc == top$V18.reg & top$V18.reg == top$V18.glo
+top$ge = top$V17.loc == top$V17.reg & top$V17.reg == top$V17.glo
+top$fa = top$V16.loc == top$V16.reg & top$V16.reg == top$V16.glo
+top$or = top$V15.loc == top$V15.reg & top$V15.reg == top$V15.glo
+```
+
+## Venn tblasx Order to Species
+```{r, fig.showtext=TRUE, fig.width=12, fig.height=12}
+venn.sp <- draw.triple.venn(
+  area1 = dim(blst_mydb2)[1], # local
+  area2 = dim(blst_imdb2)[1], # regional
+  area3 = dim(blst_global2)[1], # global
+  n12 = length(which(top$V18.loc == top$V18.reg)),
+  n23 = length(which(top$V18.reg == top$V18.glo)),
+  n13 = length(which(top$V18.loc == top$V18.glo)),
+  n123 = length(which(top$sp == TRUE)),
+  fill = c("#fbada7", "#66d688", "#a0c4ff"),
+  lty = "blank",
+  cex = 2.5,
+  cat.cex = 3, cat.default.pos = "outer", 
+  cat.pos = c(-27, 27, 135),
+  cat.dist = c(0.055, 0.055, 0.055), cat.fontfamily = "Calibri"
+)
+p_sp = grid.arrange(gTree(children = venn.sp), bottom =textGrob("Species", gp=gpar(cex=3.5, fontfamily="Calibri", fontface="bold")))
+
+venn.ge <- draw.triple.venn(
+  area1 = 3197, # local
+  area2 = 3197, # regional
+  area3 = 3197, # global
+  n12 = length(which(top$V17.loc == top$V17.reg)), #12
+  n23 = length(which(top$V17.reg == top$V17.glo)), #23
+  n13 = length(which(top$V17.loc == top$V17.glo)), #13
+  n123 = length(which(top$ge == TRUE)), #n123
+  fill = c("#fbada7", "#66d688", "#a0c4ff"),
+  lty = "blank",
+  cex = 2.5,
+  cat.cex = 3, cat.default.pos = "outer", 
+  cat.pos = c(-27, 27, 135),
+  cat.dist = c(0.055, 0.055, 0.055), cat.fontfamily = "Calibri"
+)
+p_ge = grid.arrange(gTree(children = venn.ge), bottom =textGrob("Genus", gp=gpar(cex=3.5, fontfamily="Calibri", fontface="bold")))
+
+venn.fa <- draw.triple.venn(
+  area1 = 3197, # local
+  area2 = 3197, # regional
+  area3 = 3197, # global
+  n12 = length(which(top$V16.loc == top$V16.reg)), #12
+  n23 = length(which(top$V16.reg == top$V16.glo)), #23
+  n13 = length(which(top$V16.loc == top$V16.glo)), #13
+  n123 = length(which(top$fa == TRUE)), #n123
+  fill = c("#fbada7", "#66d688", "#a0c4ff"),
+  lty = "blank",
+  cex = 2.5,
+  cat.cex = 3, cat.default.pos = "outer", 
+  cat.pos = c(-27, 27, 135),
+  cat.dist = c(0.055, 0.055, 0.055), cat.fontfamily = "Calibri"
+)
+p_fa = grid.arrange(gTree(children = venn.fa), bottom =textGrob("Family", gp=gpar(cex=3.5, fontfamily="Calibri", fontface="bold")))
+
+venn.or <- draw.triple.venn(
+  area1 = 3197, # local
+  area2 = 3197, # regional
+  area3 = 3197, # global
+  n12 = length(which(top$V15.loc == top$V15.reg)), #12
+  n23 = length(which(top$V15.reg == top$V15.glo)), #23
+  n13 = length(which(top$V15.loc == top$V15.glo)), #13
+  n123 = length(which(top$or == TRUE)), #n123
+  fill = c("#fbada7", "#66d688", "#a0c4ff"),
+  lty = "blank",
+  cex = 2.5,
+  cat.cex = 3, cat.default.pos = "outer", 
+  cat.pos = c(-27, 27, 135),
+  cat.dist = c(0.055, 0.055, 0.055), cat.fontfamily = "Calibri"
+)
+p_or = grid.arrange(gTree(children = venn.or), bottom =textGrob("Order", gp=gpar(cex=3.5, fontfamily="Calibri", fontface="bold")))
+```
+
+
+```{r, fig.showtext=TRUE, fig.width=48, fig.height=15}
+venn_tblastx =  grid.arrange(arrangeGrob(p_or, p_fa, p_ge, p_sp, ncol = 4, nrow = 1), # First row with 3 plots in 3 different columns
+                             top = textGrob("tblastx", gp=gpar(cex=5, fontfamily="Calibri", fontface="bold"),x=0.05, y= -0.25))
+lg <- legendGrob(nrow=1, ncol= 6, 
+                 labels=c("Databases :", "Local", "Regional", "Global"), 
+                 pch = c(0,19,19,19), hgap = 4, byrow=FALSE,
+                 gp=gpar(col=c("white", "#fbada7", "#66d688", "#a0c4ff"), cex=5, fontfamily="Calibri", fontface="bold"))
+
+venn_tblastx = grid.arrange(arrangeGrob(venn_tblastx, nrow = 1), # First row with 3 plots in 3 different columns
+                            arrangeGrob(lg),  
+                            heights = c(4,1))
+
+gb = rectGrob(gp=gpar(lwd=4, col = "black", fill=NA))
+
+venn_tblastx = grid.arrange(gTree(children = gList(venn_tblastx, gb)))
+```
+
+```{r}
+rm(list= grep("venn_blastn|venn_tblastx", ls(), value=TRUE, invert = TRUE))
+gc()
+```
+
+# merged blastn & tblastx venn
+```{r, fig.showtext=TRUE, fig.width=48, fig.height=27}
+grid.arrange(arrangeGrob(venn_blastn, nrow = 1), # First row with 3 plots in 3 different columns
+             arrangeGrob(venn_tblastx, nrow = 1),    # Second row with 2 plots in 2 different columns
+             # arrangeGrob(lg),  
+             heights = c(0.44,0.56))
+             
+tiff(filename = "./results_figures/figure3.tiff", 
+     width = 48, height = 27.5, units = "in", pointsize = 18, compression = "lzw", res=600)
+grid.arrange(arrangeGrob(venn_blastn, nrow = 1), # First row with 3 plots in 3 different columns
+             arrangeGrob(venn_tblastx, nrow = 1),    # Second row with 2 plots in 2 different columns
+             # arrangeGrob(lg),  
+             heights = c(0.44,0.56)                        # Number of rows
+             )
+dev.off()
+```
+
+# Session info
+```{r}
+sessioninfo::session_info(pkgs="attached")
+```
