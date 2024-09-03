@@ -1,0 +1,126 @@
+## .scroll-200 {
+##   max-height: 200px;
+##   overflow-y: auto;
+##   background-color: inherit;
+## }
+
+## .tocify .tocify-header {
+##   #position: fixed;
+##   #top: 50px;
+##   #left: 50px;
+##   width: 350px;
+##   #height: 400px;
+##   }
+
+suppressPackageStartupMessages({
+  library(tidyverse)
+  library(reshape2)
+  library(Biostrings)
+  library(ggpubr)
+  })
+
+rm(list=ls())
+gc()
+
+blst_mydb = read.table("./results_blastn300/local.out.top")
+blst_mydb = blst_mydb[order(blst_mydb$V1), ]
+blst_imdb = read.table("./results_blastn300/regional.out.top")
+blst_imdb = blst_imdb[order(blst_imdb$V1), ]
+blst_global = read.table("./results_blastn300/global.out.top")
+blst_global = blst_global[order(blst_global$V1), ]
+
+dim(blst_mydb)[1] ; dim(blst_imdb)[1] ; dim(blst_global)[1]
+
+temp = inner_join(blst_mydb, blst_imdb, by="V1")
+temp2 = inner_join(temp, blst_global, by="V1")
+blst_otus = temp2$V1
+rm(temp, temp2)
+
+blst_mydb2 = subset(blst_mydb, V1 %in% blst_otus )
+blst_imdb2 = subset(blst_imdb, V1 %in% blst_otus)
+blst_global2 = subset(blst_global, V1 %in% blst_otus)
+
+dim(blst_mydb2)[1] ; dim(blst_imdb2)[1] ; dim(blst_global2)[1]
+
+library(extrafont)
+library(showtext)
+
+blst_comb_bit = data.frame("V1"=blst_mydb2$V1, "mydb"=blst_mydb2$V12, "imdb"=blst_imdb2$V12, "global"=blst_global2$V12)
+blst_comb_bit = melt(blst_comb_bit, id.vars = "V1")
+
+head(blst_comb_bit)
+
+p_blastn_bit = ggplot(blst_comb_bit, aes(x=value)) +
+  geom_density(aes(group=variable, colour=variable, fill=variable), alpha=0.3) +
+  theme_bw(base_size=25, base_family = "Calibri") +
+  ylab("Density") + xlab("Blastn Bit Score") + 
+  scale_y_continuous(breaks = c(seq(0, 0.006, 0.001)), limits = c(0, 0.006)) +
+  scale_x_continuous(breaks = c(seq(0, 650, 100)), limits = c(0, 650)) +
+  guides(fill = guide_legend(title = "Databases"), color="none") +
+  theme(legend.position= c(0.9,0.8),
+        axis.text.x = element_text(size=rel(1.2), angle=35, hjust=0.5, vjust=0.8),
+        axis.text.y = element_text(size=rel(1.2)),
+        panel.grid.major = element_blank(), panel.grid.minor = element_blank(), 
+        panel.border = element_rect(colour = "black", fill=NA, size=1.8),
+        panel.background = element_blank()) +
+  scale_fill_manual(values =c("#f8766d", "#00ba38", "#619cff"), labels = c("Local", "Regional", "Global"))
+
+p_blastn_bit
+
+rm(list = ls(pattern = "blst_*."))
+
+blst_mydb = read.table("./results_tblastx300/local.out.top")
+blst_mydb = blst_mydb[order(blst_mydb$V1), ]
+
+blst_imdb = read.table("./results_tblastx300/regional.out.top")
+blst_imdb = blst_imdb[order(blst_imdb$V1), ]
+
+blst_global = read.table("./results_tblastx300/global.out.top")
+blst_global = blst_global[order(blst_global$V1), ]
+
+dim(blst_mydb)[1] ; dim(blst_imdb)[1] ; dim(blst_global)[1]
+
+temp = inner_join(blst_mydb, blst_imdb, by="V1")
+temp2 = inner_join(temp, blst_global, by="V1")
+blst_otus = temp2$V1
+rm(temp, temp2)
+
+blst_mydb2 = subset(blst_mydb, V1 %in% blst_otus )
+blst_imdb2 = subset(blst_imdb, V1 %in% blst_otus)
+blst_global2 = subset(blst_global, V1 %in% blst_otus)
+
+dim(blst_mydb2)[1] ; dim(blst_imdb2)[1] ; dim(blst_global2)[1]
+
+library(extrafont)
+library(showtext)
+blst_comb_bit = data.frame("V1"=blst_mydb2$V1, "mydb"=blst_mydb2$V12, "imdb"=blst_imdb2$V12, "global"=blst_global2$V12)
+blst_comb_bit = melt(blst_comb_bit, id.vars = "V1")
+
+head(blst_comb_bit)
+p_tblas_bit = ggplot(blst_comb_bit, aes(x=value)) +
+  geom_density(aes(group=variable, colour=variable, fill=variable), alpha=0.3) +
+  theme_bw(base_size=25, base_family = "Calibri") +
+  ylab("Density") + xlab("Tblastx Bit Score") + 
+  scale_y_continuous(breaks = c(seq(0, 0.023, 0.005)), limits = c(0, 0.023)) +
+  scale_x_continuous(breaks = c(seq(50, 260, 50)), limits = c(50, 260)) +
+  guides(fill = guide_legend(title = "Databases"), fill="none") +  scale_fill_hue(labels = c("Local", "Regional", "Global")) +
+  guides(color="none") +
+  theme(legend.position= "none", #c(0.9,0.8),
+        axis.text.x = element_text(size=rel(1.2), angle=35, hjust=0.5, vjust=0.8),
+        axis.text.y = element_text(size=rel(1.2)),
+        panel.grid.major = element_blank(), panel.grid.minor = element_blank(), 
+        panel.border = element_rect(colour = "black", fill=NA, size=1.8),
+        panel.background = element_blank())
+
+p_tblas_bit = p_tblas_bit + scale_fill_manual(values =c("#f8766d", "#00ba38", "#619cff")) + scale_color_manual(values = c("#f8766d", "#00ba38", "#619cff"))
+p_tblas_bit
+
+rm(list = ls(pattern = "blst_*."))
+
+library(extrafont)
+library(showtext)
+library(gridExtra)
+p = grid.arrange(p_blastn_bit, p_tblas_bit, ncol = 2, nrow = 1)
+tiff(filename = "./results_figures/figure2.tiff", width = 24, height = 8, units = "in", pointsize = 18, compression = "lzw", res=600)
+p
+dev.off()
