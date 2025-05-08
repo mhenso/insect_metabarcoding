@@ -13,11 +13,11 @@ This project goal was identifying the number of subsamples required to detect to
   
   * [Download](https://mhenso.github.io/public/docs/db5.nb.html) from BOLD repository
   
-  ** [Cleaning](https://mhenso.github.io/public/docs/db5.nb.html) database entries
+  * [Cleaning](https://mhenso.github.io/public/docs/db5.nb.html) database entries
 
-  
 * [Step 2](https://mhenso.github.io/public/docs/db5.nb.html) - Reshape and compare the databases.
-  ** [Shell_scripting](https://mhenso.github.io/public/docs/db5.nb.html) i need to explaing
+  
+  * [Shell_scripting](https://mhenso.github.io/public/docs/db5.nb.html) i need to explaing
 
 * [Step 3](https://mhenso.github.io/public/docs/db5.nb.html) - OTUs pipeline.
 
