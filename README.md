@@ -13,7 +13,7 @@ This project goal was identifying the number of subsamples required to detect to
   * [Subsetting](https://github.com/mhenso/insect_metabarcoding/1_bold/db5.nb.html) database entries
     
 
-* [Step 2](https://mhenso.github.io/public/docs/db5.nb.html) - Reshape and compare the databases.
+* Reshape and compare the databases.
   
   * [Shell_scripting](https://github.com/mhenso/insect_metabarcoding/blob/main/2_databases/2_databases_revised.sh) Using seqkit, mafft, usearch, blast+ and R
     
@@ -26,7 +26,7 @@ This project goal was identifying the number of subsamples required to detect to
   * [Saturation](https://github.com/mhenso/insect_metabarcoding/blob/main/2_databases/2_databases_revised.sh)
   
 
-* [OTUs pipeline](https://mhenso.github.io/public/docs/db5.nb.html)
+* OTUs pipeline
 
   * [Shell_scripting](https://github.com/mhenso/insect_metabarcoding/blob/main/2_databases/2_databases_revised.sh) Using usearch and R
  
@@ -35,7 +35,7 @@ This project goal was identifying the number of subsamples required to detect to
   * [Rarefaction](https://github.com/mhenso/insect_metabarcoding/blob/main/2_databases/2_databases_revised.sh) otus300.nb.html
 
 
-* [OTUs pipeline](https://mhenso.github.io/public/docs/db5.nb.html) - OTUs pipeline for external dataset.
+* OTUs pipeline for external dataset.
 
   * [Shell_scripting](https://github.com/mhenso/insect_metabarcoding/blob/main/2_databases/2_databases_revised.sh) Using usearch and R # notes_zizka_cutadapt_subsample.sh
  
