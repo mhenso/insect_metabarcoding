@@ -1,4 +1,4 @@
-# Sihaloho_etal
+# Optimizing Methods for Insect Metabarcoding
 
 ```bash
 ./Sihaloho_etal
@@ -36,3 +36,11 @@
 ```
 
 ![](./docs/Figure_1_small.png)
+
+## Introduction
+This project goal was identifying the number of subsamples required to detect total estimated insect OTU diversity in a light trap.
+
+## Steps
+### 1 Downloading database from BOLD
+
+
