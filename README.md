@@ -35,12 +35,33 @@
 └──COI_252_samples
 ```
 
-![](./docs/Figure_1_small.png)
+![](./docs/Figure_4.png)
 
 ## Introduction
 This project goal was identifying the number of subsamples required to detect total estimated insect OTU diversity in a light trap.
 
 ## Steps
 ### 1 Downloading database from BOLD
+
+
+
+
+
+
+
+
+
+## Reference
+Sihaloho HF, Azhar I, Gani M, Senawi J, Yong LS, Ayub Q, De R, Kingston T, Phillips CD. in press. Optimizing Methods for Insect Metabarcoding. 
+
+
+
+
+
+
+
+
+
+
 
 
