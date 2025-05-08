@@ -45,7 +45,7 @@ This project goal was identifying the number of subsamples required to detect to
 Sihaloho HF, Azhar I, Gani M, Senawi J, Yong LS, Ayub Q, De R, Kingston T, Phillips CD. in press. Optimizing Methods for Insect Metabarcoding. 
 
 ## SRA
-The raw reads generated in this study are available at GenBank Sequence Read Archive, BioProject accession number PRJNA######
+The raw reads generated in this study are available at GenBank Sequence Read Archive, BioProject accession number [PRJNA1260500](http://www.ncbi.nlm.nih.gov/bioproject/1260500)
 
 ```bash
 ./Sihaloho_etal
