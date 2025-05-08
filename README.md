@@ -15,15 +15,15 @@ This project goal was identifying the number of subsamples required to detect to
 
 * Reshape and compare the databases.
   
-  * [Shell_scripting](https://mhenso.github.io/insect_metabarcoding/2_databases_revised.sh) Using seqkit, mafft, usearch, blast+ and R
+  * [Shell_scripting](https://mhenso.github.io/insect_metabarcoding/2_databases/2_databases_revised.sh) Using seqkit, mafft, usearch, blast+ and R
     
   * [Remove NUMTS and perform blastn/tblastx](https://mhenso.github.io/insect_metabarcoding/2_databases/db5_nonumts.nb.html) 
  
-  * [Blast reseults](https://github.com/mhenso/insect_metabarcoding/blob/main/2_databases/2_databases_revised.sh) blastn300.nb.html
+  * [Blast reseults](https://mhenso.github.io/insect_metabarcoding/2_databases/blastn300.nb.html) 
  
-  * [Figure 2](https://github.com/mhenso/insect_metabarcoding/b) bitscore.nb.html  [Figure 3](https://github.com/mhenso/insect_metabarcoding/b) blastn300_venn.nb.html
+  * [Figure 2](https://mhenso.github.io/insect_metabarcoding/2_databases/bitscore.nb.html)  [Figure 3](https://mhenso.github.io/insect_metabarcoding/2_databases/blastn300_venn.nb.html)
  
-  * [Saturation](https://github.com/mhenso/insect_metabarcoding/blob/main/2_databases/2_databases_revised.sh)
+  * [Saturation](https://mhenso.github.io/insect_metabarcoding/2_databases/2_databases_revised.sh)
   
 
 * OTUs pipeline
