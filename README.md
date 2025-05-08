@@ -28,20 +28,20 @@ This project goal was identifying the number of subsamples required to detect to
 
 * OTUs pipeline
 
-  * [Shell_scripting](https://github.com/mhenso/insect_metabarcoding/blob/main/2_databases/2_databases_revised.sh) Using usearch and R
+  * [Shell_scripting](https://github.com/mhenso/insect_metabarcoding/blob/main/3_cutadapt/3_cutadapt_revised.sh) Using usearch and R
  
-  * [Remove NUMTS](https://github.com/mhenso/insect_metabarcoding/blob/main/2_databases/2_databases_revised.sh)
+  * [Remove NUMTS](https://mhenso.github.io/insect_metabarcoding/3_cutadapt/otus_numts.nb.html)
  
-  * [Rarefaction](https://github.com/mhenso/insect_metabarcoding/blob/main/2_databases/2_databases_revised.sh) otus300.nb.html
+  * [Rarefaction](https://mhenso.github.io/insect_metabarcoding/3_cutadapt/otus300.nb.html)
 
 
 * OTUs pipeline for external dataset.
 
-  * [Shell_scripting](https://github.com/mhenso/insect_metabarcoding/blob/main/2_databases/2_databases_revised.sh) Using usearch and R # notes_zizka_cutadapt_subsample.sh
+  * [Shell_scripting](https://github.com/mhenso/insect_metabarcoding/blob/main/3_cutadapt_external_dataset/notes_zizka_cutadapt_subsample.sh) Using usearch and R # notes_zizka_cutadapt_subsample.sh
  
-  * [Remove NUMTS](https://github.com/mhenso/insect_metabarcoding/blob/main/2_databases/2_databases_revised.sh) # otus_numts.nb.html
+  * [Remove NUMTS](https://mhenso.github.io/insect_metabarcoding/3_cutadapt_external_dataset/otus_numts.nb.html)
  
-  * [Rarefaction](https://github.com/mhenso/insect_metabarcoding/blob/main/2_databases/2_databases_revised.sh) # otus300.nb.html
+  * [Rarefaction](https://mhenso.github.io/insect_metabarcoding/3_cutadapt_external_dataset/otus300.nb.html)
 
 
 ## Reference
