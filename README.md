@@ -10,14 +10,14 @@ This project goal was identifying the number of subsamples required to detect to
   
   * [Download](https://mhenso.github.io/insect_metabarcoding/1_bold/all_insecta.nb.html) from BOLD repository
   
-  * [Subsetting](https://github.com/mhenso/insect_metabarcoding/1_bold/db5.nb.html) database entries
+  * [Subsetting](https://mhenso.github.io/insect_metabarcoding/1_bold/db5.nb.html) database entries
     
 
 * Reshape and compare the databases.
   
-  * [Shell_scripting](https://github.com/mhenso/insect_metabarcoding/blob/main/2_databases/2_databases_revised.sh) Using seqkit, mafft, usearch, blast+ and R
+  * [Shell_scripting](https://mhenso.github.io/insect_metabarcoding/2_databases_revised.sh) Using seqkit, mafft, usearch, blast+ and R
     
-  * [Remove NUMTS and perform blastn/tblastx](https://github.com/mhenso/insect_metabarcoding/blob/main/2_databases/2_databases_revised.sh) db5_nonumts.nb.html
+  * [Remove NUMTS and perform blastn/tblastx](https://mhenso.github.io/insect_metabarcoding/2_databases/db5_nonumts.nb.html) 
  
   * [Blast reseults](https://github.com/mhenso/insect_metabarcoding/blob/main/2_databases/2_databases_revised.sh) blastn300.nb.html
  
