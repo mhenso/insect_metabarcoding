@@ -17,9 +17,11 @@ This project goal was identifying the number of subsamples required to detect to
   
   * [Shell_scripting](https://github.com/mhenso/insect_metabarcoding/blob/main/2_databases/2_databases_revised.sh) Using seqkit, mafft, usearch, blast+ and R
     
-  * [Remove NUMTS](https://github.com/mhenso/insect_metabarcoding/blob/main/2_databases/2_databases_revised.sh)
+  * [Remove NUMTS and perform blastn/tblastx](https://github.com/mhenso/insect_metabarcoding/blob/main/2_databases/2_databases_revised.sh) db5_nonumts.nb.html
  
-  * [Blast reseults](https://github.com/mhenso/insect_metabarcoding/blob/main/2_databases/2_databases_revised.sh)
+  * [Blast reseults](https://github.com/mhenso/insect_metabarcoding/blob/main/2_databases/2_databases_revised.sh) blastn300.nb.html
+ 
+  * [Figure 2](https://github.com/mhenso/insect_metabarcoding/b) bitscore.nb.html  [Figure 3](https://github.com/mhenso/insect_metabarcoding/b) blastn300_venn.nb.html
  
   * [Saturation](https://github.com/mhenso/insect_metabarcoding/blob/main/2_databases/2_databases_revised.sh)
   
