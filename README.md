@@ -26,18 +26,22 @@ This project goal was identifying the number of subsamples required to detect to
   * [Saturation](https://github.com/mhenso/insect_metabarcoding/blob/main/2_databases/2_databases_revised.sh)
   
 
-* [Step 3](https://mhenso.github.io/public/docs/db5.nb.html) - OTUs pipeline.
+* [OTUs pipeline](https://mhenso.github.io/public/docs/db5.nb.html)
 
   * [Shell_scripting](https://github.com/mhenso/insect_metabarcoding/blob/main/2_databases/2_databases_revised.sh) Using usearch and R
  
   * [Remove NUMTS](https://github.com/mhenso/insect_metabarcoding/blob/main/2_databases/2_databases_revised.sh)
-
-
-* [Step 5](https://mhenso.github.io/public/docs/db5.nb.html) - OTUs pipeline for external dataset.
-
-  * [Shell_scripting](https://github.com/mhenso/insect_metabarcoding/blob/main/2_databases/2_databases_revised.sh) Using usearch and R
  
-  * [Remove NUMTS](https://github.com/mhenso/insect_metabarcoding/blob/main/2_databases/2_databases_revised.sh)
+  * [Rarefaction](https://github.com/mhenso/insect_metabarcoding/blob/main/2_databases/2_databases_revised.sh) otus300.nb.html
+
+
+* [OTUs pipeline](https://mhenso.github.io/public/docs/db5.nb.html) - OTUs pipeline for external dataset.
+
+  * [Shell_scripting](https://github.com/mhenso/insect_metabarcoding/blob/main/2_databases/2_databases_revised.sh) Using usearch and R # notes_zizka_cutadapt_subsample.sh
+ 
+  * [Remove NUMTS](https://github.com/mhenso/insect_metabarcoding/blob/main/2_databases/2_databases_revised.sh) # otus_numts.nb.html
+ 
+  * [Rarefaction](https://github.com/mhenso/insect_metabarcoding/blob/main/2_databases/2_databases_revised.sh) # otus300.nb.html
 
 
 ## Reference
