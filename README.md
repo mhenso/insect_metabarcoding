@@ -15,7 +15,7 @@ This project goal was identifying the number of subsamples required to detect to
 
 * Reshape and compare the databases.
   
-  * [Shell_scripting](https://mhenso.github.io/insect_metabarcoding/2_databases/2_databases_revised.sh) Using seqkit, mafft, usearch, blast+ and R
+  * [Shell_scripting](https://github.com/mhenso/insect_metabarcoding/tree/main/2_databases/2_databases_revised.sh) Using seqkit, mafft, usearch, blast+ and R
     
   * [Remove NUMTS and perform blastn/tblastx](https://mhenso.github.io/insect_metabarcoding/2_databases/db5_nonumts.nb.html) 
  
