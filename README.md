@@ -1,5 +1,8 @@
 # Optimizing Methods for Insect Metabarcoding
 
+![](./docs/Figure_4.png)
+
+
 ```bash
 ./Sihaloho_etal
 ├──1_bold
@@ -34,8 +37,6 @@
 │           └──dambe
 └──COI_252_samples
 ```
-
-![](./docs/Figure_4.png)
 
 ## Introduction
 This project goal was identifying the number of subsamples required to detect total estimated insect OTU diversity in a light trap.
