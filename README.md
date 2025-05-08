@@ -19,7 +19,7 @@ This project goal was identifying the number of subsamples required to detect to
     
   * [Remove NUMTS and perform blastn/tblastx](https://mhenso.github.io/insect_metabarcoding/2_databases/db5_nonumts.nb.html) 
  
-  * [Blast reseults](https://mhenso.github.io/insect_metabarcoding/2_databases/blastn300.nb.html) 
+  * [Blast results](https://mhenso.github.io/insect_metabarcoding/2_databases/blastn300.nb.html) 
  
   * [Figure 2](https://mhenso.github.io/insect_metabarcoding/2_databases/bitscore.nb.html) and [Figure 3](https://mhenso.github.io/insect_metabarcoding/2_databases/blastn300_venn.nb.html)
  
@@ -56,20 +56,12 @@ The raw reads generated in this study are available at GenBank Sequence Read Arc
 │   ├──rds
 │   └──results
 ├──2_databases
-│   ├──data
 │   ├──results
 │   │   ├──global
-│   │   │   ├──blast300
-│   │   │   ├──confirm_coordinate
-│   │   │   └──usearch
 │   │   ├──local
-│   │   │   ├──blast300
-│   │   │   └──usearch
 │   │   └──regional
-│   │       ├──blast300
-│   │       └──usearch
 │   ├──results_blastn300
-│   ├──results_figures
+│   ├──figures
 │   └──results_tblastx300
 ├──3_cutadapt
 │   ├──filtered
@@ -77,11 +69,6 @@ The raw reads generated in this study are available at GenBank Sequence Read Arc
 │   ├──output
 │   │   └──otus_finalize
 │   └──stitched
-├──4_saturation
-│   └──data
-│       ├──dambe
-│       └──global
-│           └──dambe
 └──COI_252_samples
 ```
 
