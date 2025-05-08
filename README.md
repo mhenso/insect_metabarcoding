@@ -17,7 +17,7 @@ This project goal was identifying the number of subsamples required to detect to
 
 * [Step 2](https://mhenso.github.io/public/docs/db5.nb.html) - Reshape and compare the databases.
   
-  * [Shell_scripting](https://mhenso.github.io/public/docs/db5.nb.html) i need to explaing
+  * [Shell_scripting](https://github.com/mhenso/insect_metabarcoding/blob/main/2_databases/2_databases_revised.sh) i need to explaing
 
 * [Step 3](https://mhenso.github.io/public/docs/db5.nb.html) - OTUs pipeline.
 
