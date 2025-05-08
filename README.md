@@ -8,7 +8,7 @@ This project goal was identifying the number of subsamples required to detect to
 ## Methods
 * Prepare databases.
   
-  * [Download](https://github.com/mhenso/insect_metabarcoding/1_bold/all_insecta.nb.html) from BOLD repository
+  * [Download](https://mhenso.github.io/insect_metabarcoding/1_bold/all_insecta.nb.html) from BOLD repository
   
   * [Cleaning](https://github.com/mhenso/insect_metabarcoding/1_bold/db5.nb.html) database entries
     
