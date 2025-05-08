@@ -11,7 +11,7 @@ This project goal was identifying the number of subsamples required to detect to
 ## Methods
 * [Step 1](https://mhenso.github.io/public/docs/db5.nb.html) - Prepare databases.
   
-  ** [Download](https://mhenso.github.io/public/docs/db5.nb.html) from BOLD repository
+  * [Download](https://mhenso.github.io/public/docs/db5.nb.html) from BOLD repository
   
   ** [Cleaning](https://mhenso.github.io/public/docs/db5.nb.html) database entries
 
