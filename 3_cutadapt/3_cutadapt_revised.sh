@@ -1,7 +1,5 @@
 # Sihaloho etal Optimizing Insect Metabarcoding
 # OTU pipeline 
-# Several softwares that we used are cutadapt
-
 
 # create sample list file
 ls -1 COI_252_samples/ | sed -E 's/_L001_R1_001.fastq|_L001_R2_001.fastq//' | uniq > samples
