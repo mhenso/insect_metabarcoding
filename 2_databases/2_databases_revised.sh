@@ -1,7 +1,7 @@
 # This db5_results3 was prepared for independent pipeline for each region. It removed the NUMTS and applied MAPUC and it extract from 393 to 711.
 
 pwd
-# /Sihaloho etal/1_bold_revised/results
+# /Sihaloho_etal/1_bold/results
 ls -1
 # db5.global.fa
 # db5.local.fa
@@ -19,6 +19,10 @@ grep -c "^>" db5.global.fa
 perl -pe '/^>/ ? print "\n" : chomp' db5.local.fa | tail -n +2 | sed -r '/^>/! s/N+$|^N+//g' > temp && mv temp db5.local.fa
 perl -pe '/^>/ ? print "\n" : chomp' db5.regional.fa | tail -n +2 | sed -r '/^>/! s/N+$|^N+//g' > temp && mv temp db5.regional.fa
 perl -pe '/^>/ ? print "\n" : chomp' db5.global.fa | tail -n +2 | sed -r '/^>/! s/N+$|^N+//g' > temp && mv temp db5.global.fa
+
+pwd
+# /Sihaloho_etal/2_databases/results
+cp ../../1_bold/results/*.fa ./
 
 # Assessing the homopolimer ACTG >=12 & the ambiguous Ns >=6, and save
 ~/seqkit locate -P -f ./hopol.fa ./db5.local.fa --threads 8 | sort -nk 1,1 > db5.local.hopol.fa
@@ -46,11 +50,11 @@ grep -c "^>" ./regional/db5.regional.nohopol.fa
 grep -c "^>" ./global/db5.global.nohopol.fa
 # 4229603
 
-
+rm db5.global.fa db5.local.fa db5.regional.fa
 
 # LOCAL -------------------------------------------------------------------------------------------------- #
 pwd
-# /Sihaloho etal/2_databases_revised/results/local
+# /Sihaloho_etal/2_databases/results/local
 
 # use previously work
 ## align the rest of db5.local.nohopol.fa
@@ -61,8 +65,7 @@ wc -l ../droplist
 ~/seqkit -w 0 grep -v --pattern-file ../droplist ./db5.local.nohopol.fa > ./db5.local.nohopol.rest.fa
 # [INFO] 2570 patterns loaded from file
 grep -c "^>" ./db5.local.nohopol.rest.fa
-# 57657 --> 57657+2570 = 60,227 (same as on line 40)
-
+# 57657 --> 57657+2570 = 60,227 
 
 ## Align the rest db with previous aligned filtered db sequences
 mafft --auto --addfull ./db5.local.nohopol.rest.fa --keeplength --thread 8 ../db.local2.nohopol.filt.afa.ler_fol.ref > db5.local.ler_fol.rest.afa &
@@ -126,11 +129,11 @@ grep -c "^>" ./db5.local.nonumts.uniq.fa
 # 11,421
 
 # R check MAPUC
-# Produce "/results3/local/db5.local.nonumts.uniq.mapuc.fa"
+# Produce "/results/local/db5.local.nonumts.uniq.mapuc.fa"
 
 # BASH
 pwd
-# /Sihaloho etal/temp_1_bold/results3/local/
+# /Sihaloho_etal/temp_1_bold/results3/local/
 # convert to unix format and linearize
 ~/seqkit seq -w 0 ./db5.local.nonumts.uniq.mapuc.fa > db5.local.final.fa
 grep -c "^>" db5.local.final.fa
