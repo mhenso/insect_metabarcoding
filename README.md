@@ -50,7 +50,8 @@ Sihaloho HF, Azhar I, Gani M, Senawi J, Yong LS, Ayub Q, De R, Kingston T, Phill
 ## SRA
 The raw reads generated in this study are available at GenBank Sequence Read Archive, BioProject accession number [PRJNA1260500](http://www.ncbi.nlm.nih.gov/bioproject/1260500)
 
-```bash
+## Folder structure
+
 ./Sihaloho_etal
 ├──1_bold
 │   ├──rds
@@ -70,7 +71,7 @@ The raw reads generated in this study are available at GenBank Sequence Read Arc
 │   │   └──otus_finalize
 │   └──stitched
 └──COI_252_samples
-```
+
 
 
 
