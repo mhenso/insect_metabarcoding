@@ -1,3 +1,6 @@
+pwd
+# /Sihaloho_etal/4_cutadapt_external_dataset
+
 # sratoolkit
 ## Download sra info for creating sample list
 esearch -db sra -query PRJNA883590 | esummary > temp_summary
@@ -54,7 +57,6 @@ cutadapt -j 128 -g GGDACWGGWTGAACWGTWTAYCCHCC ./fastq_subsample/${x}_1.fastq.gz 
 cutadapt -j 128 -g TANACYTCNGGRTGNCCRAARAAYCA ./fastq_subsample/${x}_2.fastq.gz -o ./cut/${x}_2.fastq;
 done
 # cutadapt.sh ===
-
 ### Notes: you need to run "conda activate env_cutadapt" before nohup it
 conda activate env_cutadapt
 nohup bash cutadapt_lt.sh &> cutadapt_lt.sh.out &
@@ -160,9 +162,9 @@ $usearch -threads 128 \
 nohup bash usearch_otutab.sh &> usearch_otutab.sh.out &
 
 
-# OTUS finalize ------------------------------------------------------------ DONE
+# OTUS finalize ------------------------------------------------------------
 pwd
-# /lustre/work/hsihaloh/zizka_cutadapt_subsample/output/otus_finalise
+# /Sihaloho_etal/4_cutadapt_external_dataset/output/otus_finalize
 
 seqkit seq -g -w 0 ../otus97.fa | paste - - | awk '{print length ($2)}' | sort | uniq -c | sort -nk 2,2 -r > otus97.fa.tab
 
@@ -241,8 +243,5 @@ wc -l ../otutab.txt
 
 
 # Find NUMTS
-# R: temp3_cutadapt.Rproj --> otus_numts.Rmd ==> produced "otus97.final.300.nonumts.fa"
-
-
-
+# R: 4_cutadapt.Rproj --> otus300.Rmd phyloseq, srs, inext plotting ==> produced Fig S1, Table S3
 
