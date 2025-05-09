@@ -1,13 +1,12 @@
 # Sihaloho etal Optimizing Insect Metabarcoding
 # OTU pipeline 
 
+pwd
+# /Sihaloho_etal
 # create sample list file
 ls -1 COI_252_samples/ | sed -E 's/_L001_R1_001.fastq|_L001_R2_001.fastq//' | uniq > samples
 
 # CUTADAPT
-pwd
-# /COI_LT
-
 for x in $(cat samples);
 do
 # forward
@@ -25,7 +24,7 @@ paste samples list_reads.txt | column -s $'\t' -t > list_reads_merged.txt
 
 
 pwd 
-# /COI_LT/cutadapt
+# /Sihaloho_etal/3_cutadapt
 cp ../samples ./
 
 # PEAR
@@ -84,7 +83,7 @@ $usearch -threads 128 \
 
 # we got our otu_table, we need to finalize the otu table
 pwd 
-# /COI_LT/cutadapt/output/otus_finalize
+# /Sihaloho_etal/3_cutadapt/output/otus_finalize
 # OTUS finalize 
 seqkit seq -g -w 0 ../otus97.fa | paste - - | awk '{print length ($2)}' | sort | uniq -c | sort -nk 2,2 -r > otus97.fa.tab
 
@@ -144,30 +143,7 @@ grep -w -f otus97.final.300.id ../otutab.txt > ./otutab.300.txt
 
 ~/seqkit seq -w 0 ./otus97.final.300.nonumts.fa > temp && mv temp ./otus97.final.300.nonumts.fa
 
-
-# R: temp3_cutadapt.Rproj --> otus300.Rmd phyloseq, srs, inext plotting ==> produced Fig.4 & Fig. 5
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+pwd
+# /Sihaloho_etal/3_cutadapt
+# R: 3_cutadapt.Rproj --> otus300.Rmd phyloseq, srs, inext plotting ==> produced Fig.4 & Fig. 5
 
