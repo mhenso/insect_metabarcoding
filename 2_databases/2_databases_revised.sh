@@ -1,12 +1,4 @@
-Modified from "not_remove_db5_results3.sh"
-
-Thi db5_results3 was prepared for independent pipeline for each region. It removed the NUMTS and applied MAPUC and 
-it extract from 393 to 711 not like db5 was 394 to 712
-
-pwd
-# /Sihaloho etal/1_bold_revised/
-# R: db5.Rmd --> /Sihaloho etal/1_bold_revised/results/db5.local.fa, db5.regional.fa, db5.global.fa
-
+# This db5_results3 was prepared for independent pipeline for each region. It removed the NUMTS and applied MAPUC and it extract from 393 to 711.
 
 pwd
 # /Sihaloho etal/1_bold_revised/results
@@ -33,13 +25,10 @@ perl -pe '/^>/ ? print "\n" : chomp' db5.global.fa | tail -n +2 | sed -r '/^>/! 
 ~/seqkit locate -P -f ./hopol.fa ./db5.regional.fa --threads 8 | sort -nk 1,1 > db5.regional.hopol.fa
 ~/seqkit locate -P -f ./hopol.fa ./db5.global.fa --threads 8 | sort -nk 1,1 > db5.global.hopol.fa
 
-
-
 # create list of sequence of hopol to be removed
 cat db5.local.hopol.fa | awk '!seen[$1]++' | cut -f 1 > db5.local.hopol.fa.list
 cat db5.regional.hopol.fa | awk '!seen[$1]++' | cut -f 1 > db5.regional.hopol.fa.list
 cat db5.global.hopol.fa | awk '!seen[$1]++' | cut -f 1 > db5.global.hopol.fa.list
-
 
 # remove the sequences
 mkdir ./local ./regional ./global 
@@ -61,7 +50,7 @@ grep -c "^>" ./global/db5.global.nohopol.fa
 
 # LOCAL -------------------------------------------------------------------------------------------------- #
 pwd
-/Sihaloho etal/2_databases_revised/results/local # /Sihaloho etal/temp_1_bold/results3/local
+# /Sihaloho etal/2_databases_revised/results/local
 
 # use previously work
 ## align the rest of db5.local.nohopol.fa
