@@ -61,6 +61,9 @@ The raw reads generated in this study are available at GenBank Sequence Read Arc
  │   ├── blast_db_results
  │   ├── figures
  │   └── results
+ │   │   ├── global
+ │   │   ├── local
+ │   │   └── regional
  ├── 3_cutadapt
  │   ├── filtered
  │   ├── lt_db
