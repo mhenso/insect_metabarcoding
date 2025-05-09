@@ -1,8 +1,6 @@
-
 # sratoolkit
 ## Download sra info for creating sample list
 esearch -db sra -query PRJNA883590 | esummary > temp_summary
-
 
 # BASH
 ## create sample list
@@ -39,13 +37,6 @@ cat ./fastq_subsample/${x}_1.fastq | grep "^@SRR" | wc -l  >> R1_reads.txt;
 cat ./fastq_subsample/${x}_2.fastq | grep "^@SRR" | wc -l  >> R2_reads.txt; 
 done
 ## comment: exact number of reads were sampled
-
-pwd
-# /lustre/work/hsihaloh/zizka_cutadapt_subsample
-cp ../zizka_cutadapt/srr_list ./
-
-# copy subsampled fastq
-rsync -ah /lustre/work/hsihaloh/z_lus_scr_20231018/zizka_subsample/fastq_subsample/*.gz ./fastq_subsample
 
 mkdir cut
 nano cutadapt.sh
@@ -91,8 +82,6 @@ mkdir filtered && nano usearch_fastq_filter.sh
 
 # usearch_fastq_filter.sh ---
 export OMP_NUM_THREADS=128
-usearch='/home/caphilli/usearch11_64'
-
 
 for s in $(cat srr_list)
 do
@@ -129,7 +118,6 @@ nano usearch_fastx_uniques.sh
 
 # usearch_fastx_uniques.sh ---
 export OMP_NUM_THREADS=128
-usearch='/home/caphilli/usearch11_64'
 
 $usearch -fastx_uniques ./output/combined.fa \
 -fastaout ./output/uniques.fa \
@@ -147,7 +135,7 @@ cat ./output/uniques.fa | grep -c "^>"
 nano usearch_cluster_otus.sh
 # usearch_cluster_otus.sh ---
 export OMP_NUM_THREADS=128
-usearch='/home/caphilli/usearch11_64'
+
 $usearch -cluster_otus ./output/uniques.fa \
 -otus ./output/otus97.fa \
 -relabel Otu -threads 128
@@ -162,7 +150,6 @@ cat ./output/otus97.fa | grep -c "^>"
 nano usearch_otutab.sh
 # usearch_otutab.sh ---
 export OMP_NUM_THREADS=128
-usearch='/home/caphilli/usearch11_64'
 
 $usearch -threads 128 \
 -otutab ./output/combined.fa \
