@@ -5,7 +5,7 @@
 ## Introduction
 This project goal was identifying the number of subsamples required to detect total estimated insect OTU diversity in a light trap.
 
-## Methods
+## Codes
 * Prepare databases.
   
   * [Download](https://mhenso.github.io/insect_metabarcoding/1_bold/all_insecta.nb.html) from BOLD repository
