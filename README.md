@@ -53,20 +53,22 @@ The raw reads generated in this study are available at GenBank Sequence Read Arc
 ## Folder structure
 ```bash
  ./Sihaloho_etal
- ├── 1_bold_revised
+ ├── 1_bold
  │   ├── rds
  │   ├── results
- ├── 2_databases_revised
+ ├── 2_databases
  │   ├── blast_db
  │   ├── blast_db_results
  │   ├── figures
  │   └── results
- ├── 3_cutadapt_revised
+ ├── 3_cutadapt
  │   ├── filtered
  │   ├── lt_db
  │   ├── output
  │   └── stitched
- ├── 3_cutadapt_revised_zizka_subsample
+ ├── 3_cutadapt_zizka_subsample
+ │   ├── cut
+ │   ├── fastq
  │   ├── fastq_subsample
  │   ├── filtered
  │   ├── output
@@ -74,7 +76,7 @@ The raw reads generated in this study are available at GenBank Sequence Read Arc
  │   ├── rds
  │   └── stitched
  ├── COI_252_samples
- ├── docs
+ └── docs
 ```
 
 
