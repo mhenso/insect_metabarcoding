@@ -41,7 +41,6 @@ done
 
 # USEARCH
 ## -fastq_filter filter consensus reads to only include consensus reads with estimated 1 error max
-usearch='/home/caphilli/usearch11_64'
 export OMP_NUM_THREADS=64
 
 for x in $(cat samples);
@@ -76,7 +75,7 @@ cat ./output/otus97.fa | grep -c "^>"
 # 3310
 
 ## -otutab build the otu table from the identified zotu and their counts across samples
-usearch='/home/caphilli/usearch11_64'
+
 $usearch -threads 128 \
 -otutab ./output/combined.fa \
 -otus ./output/otus97.fa \
