@@ -32,7 +32,7 @@ This project goal was identifying the number of subsamples required to detect to
  
   * [Remove NUMTS](https://mhenso.github.io/insect_metabarcoding/3_cutadapt/otus_numts.nb.html)
  
-  * [Rarefaction](https://mhenso.github.io/insect_metabarcoding/3_cutadapt/otus300.nb.html)
+  * [Sample Coverage](https://mhenso.github.io/insect_metabarcoding/3_cutadapt/otus300.nb.html)
 
 
 * OTUs pipeline for external dataset.
@@ -41,7 +41,7 @@ This project goal was identifying the number of subsamples required to detect to
  
   * [Remove NUMTS](https://mhenso.github.io/insect_metabarcoding/3_cutadapt_external_dataset/otus_numts.nb.html)
  
-  * [Rarefaction](https://mhenso.github.io/insect_metabarcoding/3_cutadapt_external_dataset/otus300.nb.html)
+  * [Sample Coverage](https://mhenso.github.io/insect_metabarcoding/3_cutadapt_external_dataset/otus300.nb.html)
 
 
 ## Reference
