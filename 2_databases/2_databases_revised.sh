@@ -253,7 +253,7 @@ makeblastdb -in ./db5.regional.final.fa -parse_seqids -dbtype nucl -out ../../bl
 
 # GLOBAL ----------------------------------------------------------------------------------------------------
 pwd
-/lustre/scratch/hsihaloh/results2/global
+# /Sihaloho_etal/2_databases/results/global
 grep -c "^>" db5.global.nohopol.fa
 # 4229603
 
@@ -276,12 +276,11 @@ seqkit grep -n -f subset_giant_global.list ./db5.global.nohopol.ler_fol.rest.afa
 mafft --multipair --addfragments primers_ler_fol.fa --keeplength --thread 32 --mapout ./db5.global.nohopol.ler_fol.rest.subset.afa > ./db5.global.nohopol.ler_fol.rest.subset.ler_fol.afa
 ### Notes: 367-392, 712-737 ==> 711-393+1 = 319 it is correct as previous
 
-# p52
+# local_pc
 python3 ./extract_alignment_region.py \
 -i ./db5.global.nohopol.ler_fol.rest.afa \
 -o ./db5.global.nohopol.ler_fol.rest.trimmed.afa \
 -s 393 -e 711
-
 
 ## create a list for primer
 grep "leray_f\|folmer_rc" --color -A 1 ./db5.global.nohopol.ler_fol.rest.trimmed.afa
@@ -331,11 +330,11 @@ grep -c "^>" ./db5.global.nonumts.uniq.fa
 # 745,041
 
 # R check MAPUC
-# Produce "/results3/global/db5.global.nonumts.uniq.mapuc.fa"
+# Produce "/results/global/db5.global.nonumts.uniq.mapuc.fa"
 
 # BASH
 pwd
-# /results3/global/
+# /Sihaloho_etal/2_databases/results/global
 # convert to unix format and linearize
 ~/seqkit seq -w 0 ./db5.global.nonumts.uniq.mapuc.fa > db5.global.final.fa
 grep -c "^>"  db5.global.final.fa
