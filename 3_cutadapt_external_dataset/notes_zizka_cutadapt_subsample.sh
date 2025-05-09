@@ -1,4 +1,26 @@
-# previous subsample on zizka_subsample
+
+# sratoolkit
+## Download sra info for creating sample list
+esearch -db sra -query PRJNA883590 | esummary > temp_summary
+
+
+# BASH
+## create sample list
+cat temp_summary | xtract -pattern DocumentSummary -element Biosample, LIBRARY_NAME, Submitter@acc, Experiment@acc, Sample@acc, Run@acc, Platform@instrument_model > PRJNA883590-info4.tsv
+awk '{print $5}' PRJNA883590-info3.tsv > srr_list
+
+
+# sratoolkit
+## Download the SRA
+prefetch --option-file srr_list
+
+# Extract / split files
+for s in $(cat srr_list); 
+do 
+fasterq-dump --threads 64 ./${s} \
+-O ./fastq;
+done
+
 
 # SEQTK
 ## subsample
