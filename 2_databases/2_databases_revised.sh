@@ -133,7 +133,7 @@ grep -c "^>" ./db5.local.nonumts.uniq.fa
 
 # BASH
 pwd
-# /Sihaloho_etal/temp_1_bold/results3/local/
+# /Sihaloho_etal/2_databases/results/local
 # convert to unix format and linearize
 ~/seqkit seq -w 0 ./db5.local.nonumts.uniq.mapuc.fa > db5.local.final.fa
 grep -c "^>" db5.local.final.fa
@@ -150,7 +150,7 @@ makeblastdb -in ./db5.local.final.fa -parse_seqids -dbtype nucl -out ../../blast
 
 # REGIONAL --------------------------------------------------------------------------------------------------
 pwd
-/lustre/scratch/hsihaloh/results3/regional
+# /Sihaloho_etal/2_databases/results/regional
 grep -c "^>" db5.regional.nohopol.fa
 # 113,428
 
@@ -177,7 +177,7 @@ seqkit grep -n -f subset_giant_regional.list ./db5.regional.nohopol.ler_fol.rest
 mafft --multipair --addfragments primers_ler_fol.fa --keeplength --thread 32 --mapout ./db5.regional.nohopol.ler_fol.rest.subset.afa > ./db5.regional.nohopol.ler_fol.rest.subset.ler_fol.afa
 ### Notes: 367-392, 712-737 ==> 711-393+1 = 319 it is correct as previous
 
-# p52
+# local_pc
 ## extract aligned region
 python3 ./extract_alignment_region.py \
 -i ./db5.regional.nohopol.ler_fol.rest.afa \
@@ -232,11 +232,11 @@ grep -c "^>" ./db5.regional.nonumts.uniq.fa
 # 23061
 
 # R check MAPUC
-# Produce "/results3/regional/db5.regional.nonumts.uniq.mapuc.fa"
+# Produce "/results/regional/db5.regional.nonumts.uniq.mapuc.fa"
 
 # BASH
 pwd
-# /Sihaloho etal/temp_1_bold/results3/regional
+# /Sihaloho_etal/2_databases/results/regional
 # convert to unix format and linearize
 ~/seqkit seq -w 0 ./db5.regional.nonumts.uniq.mapuc.fa > db5.regional.final.fa
 grep -c "^>"  db5.regional.final.fa
