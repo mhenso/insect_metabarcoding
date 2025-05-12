@@ -69,7 +69,7 @@ The raw reads generated in this study are available at GenBank Sequence Read Arc
  │   ├── lt_db
  │   ├── output
  │   └── stitched
- ├── 3_cutadapt_zizka_subsample
+ ├── 3_cutadapt_external_dataset
  │   ├── cut
  │   ├── fastq
  │   ├── fastq_subsample
