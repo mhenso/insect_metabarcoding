@@ -78,7 +78,7 @@ The raw reads generated in this study are available at GenBank Sequence Read Arc
  │   ├── plotting
  │   ├── rds
  │   └── stitched
- ├── COI_252_samples
+ ├── COI_72_samples
  └── docs
 ```
 
