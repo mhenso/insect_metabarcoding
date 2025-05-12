@@ -36,6 +36,7 @@ suppressPackageStartupMessages({
   library(tidyverse)
   library(parallel)
   library(fastSave)
+  library(Biostrings)
 })
 ```
 
@@ -211,7 +212,7 @@ summary(lm(rel ~ I(raw319^1), data=regional2))
 
 ## Save RData
 ```{r}
-system.time(fastSave::save.image.pigz(file="saturation_loc&reg.RData", n.cores = 8))
+system.time(fastSave::save.image.pigz(file="./saturation_loc_reg.RData", n.cores = 8))
 ```
 
 
@@ -232,6 +233,7 @@ suppressPackageStartupMessages({
   library(tidyverse)
   library(parallel)
   library(fastSave)
+  library(Biostrings)
 })
 ```
 
@@ -470,7 +472,7 @@ system.time(compute_TV(
 ))
 ```
 
-###compute_TS
+### compute_TS
 ```{r}
 gc()
 ```
@@ -500,6 +502,7 @@ suppressPackageStartupMessages({
   library(tidyverse)
   library(parallel)
   library(fastSave)
+  library(Biostrings)
 })
 ```
 
@@ -534,15 +537,19 @@ summary(lm(rel2$rel ~ I(raw2$raw^1)))
 ```
 
 # SLOPE
+### clearing
 ```{r}
-rstudioapi::executeCommand("restartR")
+rm(list=ls())
+gc()
 ```
+
 
 ```{r}
 suppressPackageStartupMessages({
   library(tidyverse)
   library(parallel)
   library(fastSave)
+  library(Biostrings)
 })
 ```
 
