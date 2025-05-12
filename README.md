@@ -23,7 +23,7 @@ This project goal was identifying the number of subsamples required to detect to
  
   * [Figure 2](https://mhenso.github.io/insect_metabarcoding/2_databases/bitscore.nb.html) and [Figure 3](https://mhenso.github.io/insect_metabarcoding/2_databases/blastn300_venn.nb.html)
  
-  * [Prepare alignment files](https://mhenso.github.io/insect_metabarcoding/2_databases/save_afa.nb.html) & calculate [Saturation](https://mhenso.github.io/insect_metabarcoding/2_databases/Saturation_old.nb.html)
+  * [Prepare alignment files](https://mhenso.github.io/insect_metabarcoding/2_databases/save_afa.nb.html) & calculate [Saturation](https://mhenso.github.io/insect_metabarcoding/2_databases/Saturation.nb.html)
   
 
 * OTUs pipeline
