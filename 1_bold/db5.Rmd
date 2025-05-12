@@ -1,0 +1,188 @@
+---
+title: "Not remove incomplete entries but keep independence"
+output:
+  html_notebook:
+    code_folding: show
+    df_print: paged
+    fig_width: 12
+    fig_height: 8
+    fig_caption: yes
+    toc: yes
+    toc_depth: 6
+    toc_float:
+      collapsed: no
+---
+
+```{css, echo=FALSE}
+.tocify .tocify-header {
+  #position: fixed;
+  #top: 50px;
+  #left: 50px;
+  width: 350px;
+  #height: 400px;
+  }
+```
+
+
+```{r setup}
+suppressPackageStartupMessages({
+  library(bold)
+  library(taxize)
+  library(dplyr)
+  library(Biostrings)
+  library(tidyverse)
+})
+```
+
+
+# load file
+```{r}
+system.time(ins.list <- fastSave::readRDS.pigz("./rds/ins.list.rds"))
+```
+
+# tsvdf
+```{r}
+# Define tsvdf function to convert the ins.list to dataframe
+tsvdf = function(bold_seqspec_list){
+  temp.df.rbind =c()
+  
+  for(x in 1:length(bold_seqspec_list)){
+    a = bold_seqspec_list[[x]]
+    
+    temp.df = data.frame("phylum_name" = a$name$phylum_name,   # V1
+                         "class_name" = a$name$class_name,     # V2
+                         "order_name" = a$name$order_name,     # V3
+                         "family_name" = a$name$family_name,   # V4
+                         "genus_name" = a$name$genus_name,     # V5
+                         "species_name" = a$name$species_name, # V6
+                         "sequenceID" = a$name$sequenceID,     # V7
+                         "nucleotides" = a$name$nucleotides,   # V8
+                         "markercode" = a$name$markercode,     # V9 added markercode
+                         "country" = a$name$country)           # v10 added country
+    
+    temp.df.rbind = rbind(temp.df.rbind, temp.df)
+    print(x)
+  }
+  return(temp.df.rbind)
+}
+ins.df = tsvdf(ins.list)
+```
+
+# select COI-5P
+```{r}
+head(ins.df)
+unique(ins.df$markercode)
+length(which(ins.df$markercode == "COI-5P"))
+
+ins.df2 = filter(ins.df, markercode %in% c("COI-5P")) # filter only COI-5P
+head(ins.df2)
+```
+
+```{r}
+fastSave::saveRDS.pigz(ins.df2, "./rds/ins.df2.rds")
+```
+
+**ins.df2.rds is filtered COI-5P marker**
+
+
+```{r}
+ins.df2 %>% nrow()
+
+ins.df2 %>% filter(!species_name == "") %>% nrow()
+ins.df2 %>% filter(!species_name == "") %>% filter(!genus_name == "") %>% nrow()
+ins.df2 %>% filter(!species_name == "") %>% filter(!genus_name == "") %>% filter(!family_name == "") %>% nrow()
+
+# ignore the species jump directly to genus
+ins.df2 %>% filter(!genus_name == "") %>% nrow()
+# ignore the species jump directly to family
+ins.df2 %>% filter(!family_name == "") %>% nrow()
+```
+
+# tsv.clean.not.remove
+```{r}
+# Define tsv.clean function
+tsv.clean.not.remove = function(df){
+  temp = df
+  # for (x in 8:2) {
+  #   temp = temp[temp[,x] != "" ,]
+  # }
+  # print("removing empty taxa 8 to 2 done")
+  
+  temp[,6] = gsub(",", "_", temp[,6])
+  print ("removing comma on V6 done")
+  
+  temp[,6] = gsub(" ", "_", temp[,6])
+  print ("replacing space with underscore on V6 done")
+  
+  temp[,6] = sub("_sp.*", "_sp", temp[,6])
+  print("removing addition species names after sp. done")
+  
+  #removing the dashes that appear to be the result of sequence alignment before going into the BOLD db
+  temp[,8] = gsub("-", "", temp[,8])
+  print("removing the dashes because alignment on col 8 done")
+  
+  temp$taxa = paste0(temp[,7], ";tax=p:", temp[,1], ",c:", temp[,2], ",o:", temp[,3],
+                     ",f:", temp[,4], ",g:", temp[,5], ",s:", temp[,6],  ";")
+  print("adding complet taxonomy on col 9 done")
+  
+  return(temp)
+}
+
+ins.df2.not.remove = tsv.clean.not.remove(ins.df2)
+
+nrow(ins.df2.not.remove)
+```
+
+## save to fasta files
+```{r}
+# global
+db5.global = DNAStringSet(ins.df2.not.remove$nucleotides)
+names(db5.global) = ins.df2.not.remove$taxa
+db5.global
+range(db5.global@ranges@width)
+writeXStringSet(db5.global, "./results/db5.global.fa")
+```
+
+
+```{r}
+# regional
+temp_regional = c("Malaysia", "Singapore", "Indonesia", "Cambodia", "Thailand", "Vietnam", "Myanmar", "Laos", "Phillippines", "Bangladesh", "India")
+
+temp = subset(ins.df2.not.remove, country %in% temp_regional)
+db5.regional = DNAStringSet(temp$nucleotides)
+names(db5.regional) = temp$taxa
+db5.regional
+range(db5.regional@ranges@width)
+writeXStringSet(db5.regional, "./results/db5.regional.fa")
+```
+
+```{r}
+# local
+temp = subset(ins.df2.not.remove, country == "Malaysia")
+db5.local = DNAStringSet(temp$nucleotides)
+names(db5.local) = temp$taxa
+db5.local
+range(db5.local@ranges@width)
+writeXStringSet(db5.local, "./results/db5.local.fa")
+```
+
+
+```{r}
+rm(temp, db5.global, db5.regional, db5.local, ins.df2)
+gc()
+```
+
+```{r}
+gc()
+fastSave::save.image.pigz(file="db5.RData", n.cores = 8)
+```
+
+```{r}
+system.time(fastSave::saveRDS.pigz(ins.df2.not.remove, "./rds/ins.df2.not.remove.rds", n.cores = 8))
+```
+
+
+# Session info
+```{r}
+sessioninfo::session_info(pkgs="attached")
+```
