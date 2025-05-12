@@ -1,0 +1,410 @@
+---
+title: "Zizka cutadatp_subsample"
+output:
+  html_notebook:
+    code_folding: show
+    df_print: paged
+    fig_width: 12
+    fig_height: 8
+    fig_caption: yes
+    toc: yes
+    toc_depth: 6
+    toc_float:
+      collapsed: no
+---
+
+```{css, echo=FALSE}
+.scroll-200 {
+  max-height: 200px;
+  overflow-y: auto;
+  background-color: inherit;
+}
+```
+
+```{css, echo=FALSE}
+.tocify .tocify-header {
+  #position: fixed;
+  #top: 50px;
+  #left: 50px;
+  width: 350px;
+  #height: 400px;
+  }
+```
+
+```{r}
+suppressPackageStartupMessages({
+  library(tidyverse) ; library(reshape2) ; library(Biostrings) ; library(phyloseq); library(iNEXT) ; library(ggpubr)
+})
+```
+
+#Import otu table
+```{r, fig.width=12, fig.height=8}
+otu = read.table("./output/otus_finalize/otutab.300.txt", row.names = 1)
+length(which(colSums(otu) < 10000))/ncol(otu)
+
+dim(otu)
+```
+**180 samples and 4,505 otus**
+
+# Using Shell Terminal
+```{bash}
+grep "^#" ./output/otus_finalize/otutab.300.txt > temp_colnames
+sed -E 's/#OTU ID\t//' temp_colnames > temp_colnames2
+### Using Shell Terminal ===
+```
+
+```{r}
+temp_colnames = read.table("temp_colnames2")
+dim(temp_colnames)
+head(temp_colnames)
+length(colnames(otu))
+
+colnames(otu)= temp_colnames[1,]
+head(otu)
+```
+
+# Meta
+```{r}
+meta = read.table("./metadata")
+head(meta)
+meta = meta[,-7]
+colnames(meta) = c("Biosample", "library_name", "Submitter_acc", "Experiment_acc", "Sample_acc", "Run_acc", "Platform")
+
+rownames(meta) = meta$Run_acc
+head(meta)
+meta$lib_name = paste0(str_sub(meta$library_name,1,4), str_sub(meta$library_name,-2))
+```
+
+# Refseq nonumts
+```{r}
+ref_seq = Biostrings::readDNAStringSet("./output/otus_finalize/otus97.final.300.nonumts.fa")
+ref_seq
+range(ref_seq@ranges@width)
+```
+
+# merge into  Phyloseq
+```{r}
+# We need to convert taxa_blast and otu to phyloseq objects to phyloseq object (matrix) before merging
+otu2 = otu_table(as.matrix(otu), taxa_are_rows = T)
+
+dim(meta)
+dim(otu2)
+
+length(ref_seq@ranges@group)
+
+otu_phy = merge_phyloseq(otu2, ref_seq, sample_data(meta))
+otu_phy
+
+# check if otu is correct
+length(intersect(rownames(otu_table(otu_phy)), rownames(otu)))
+```
+
+**important: since otu object wast 3247otus now after the merge with nonumts refseq become 3058, we need to remove the initial otu object**
+```{r}
+rm(otu)
+```
+
+# STOP 1
+**We have created phyloseq object **
+
+# Calculate estimateD
+Rarefy the subsamples with the lowest coverage of subsample of a sample
+
+**Use this one for calculate "estimateD"**
+```{r}
+library(doParallel)
+cl <- makeCluster(20)  # 20 on hpcc
+registerDoParallel(cl)
+
+est <- function(TK_sample){
+  require(iNEXT)
+  require(tidyverse)
+  require(phyloseq)
+  a = data.frame(otu_table(otu_phy))
+  b = data.frame(sample_data(otu_phy)) %>% subset(lib_name == TK_sample) %>% select(library_name, Run_acc) # TK_Sample == lib_name not library_name
+  b = b[order(b$library_name),]
+  a = a %>% select(all_of(b$Run_acc))
+  c = estimateD(a, datatype="abundance", base="coverage", level=NULL, conf=0.95) 
+  return(c)
+}
+
+temp = unique(meta$lib_name)
+system.time(est_otu_all <- foreach(i=temp) %dopar% est(i)) # another way
+stopCluster(cl)
+rm(cl)
+```
+
+
+```{r}
+est_otu_all2 = as.data.frame(do.call(rbind, est_otu_all))
+est_otu_all2 = est_otu_all2 %>% filter(order == 0)
+est_otu_all2
+```
+
+# Subsample otu (otu original) 
+**Using SRS package & minum coverage within a sample**
+```{r}
+temp = est_otu_all2$m # get the number of abundance of each subsample that has same coverage across each sample (rdept)
+names(temp) = est_otu_all2$site
+
+tmp_otu = as.data.frame(otu_table(otu_phy))[,-c(1:180)] # create empty otu_table as the original otu_table
+
+for (i in 1:length(temp)){
+  a = names(temp[i])
+  rdepth = temp[[i]]
+  tmp = as.data.frame(otu_table(otu_phy)) %>% select(all_of(a))
+  # names = row.names(tmp)
+  tmp = SRS::SRS(tmp, Cmin = rdepth, set_seed = T, seed = 42) # SRS::SRS
+  tmp_otu = cbind(tmp_otu, tmp)
+}
+head(tmp_otu)
+identical(colSums(tmp_otu), temp)
+```
+
+# Create new phyloseq object
+```{r}
+tmp_otu2 = otu_table(as.matrix(tmp_otu), taxa_are_rows = T)
+identical(colSums(tmp_otu), colSums(tmp_otu2))
+srs_otu_phy = merge_phyloseq(tmp_otu2, ref_seq, sample_data(meta))
+
+# check if it is identical
+identical(colnames(otu_table(srs_otu_phy)), colnames(tmp_otu2))
+identical(colSums(otu_table(srs_otu_phy)), colSums(tmp_otu2))
+```
+
+# Using Subsample "srs_otu_phy"
+## Raref OTU SRS
+```{r, fig.width=12, fig.height=8}
+temp = unique(meta$lib_name)
+
+srs_otu_list = list()
+temp
+for (i in rev(temp)){
+  a = subset(sample_data(srs_otu_phy), subset = lib_name %in% i) # change the the phyloseq object (srs_otu_phy)
+  b = a$Run_acc # change to correct unique sample name in otu table
+  c = as.data.frame(otu_table(srs_otu_phy))[,b] # change to correc otu_table
+  c[c>0]=1
+  srs_otu_list = c(list(c), srs_otu_list)
+}
+rm(a, b, c, i)
+names(srs_otu_list) = temp
+
+ine <- function(list_name){
+  require(iNEXT)
+  require(tidyverse)
+  require(phyloseq)
+  a = srs_otu_list[list_name] # need to change to correct list object name
+  b = iNEXT(a, q=c(0,1,2), datatype="incidence_raw", nboot = 100) 
+  return(b)
+}
+
+library(doParallel)
+ncores <- detectCores(logical=F) # physical cores
+ncores = 20
+cl <- makeCluster(ncores)
+registerDoParallel(cl)
+
+
+temp2 = list ("Lat1dL", "Lat1dS", "Lat1wL", "Lat1wS", "Lat2dL", "Lat2dS", "Lat2wL", "Lat2wS", "Lat3dL", "Lat3dS", "Lat3wL", "Lat3wS", "Lat4dL", "Lat4dS", "Lat4wL", "Lat4wS", "Lat6dL", "Lat6dS", "Lat6wL", "Lat6wS")
+system.time(srs_otu_list_ine <- foreach(i=temp2) %dopar% ine(i))
+stopCluster(cl)
+```
+
+```{r}
+# converting the otu_list_ine become one list
+ine.list = function(ine_all){
+  ine_all2 = ine_all[[1]]
+    for(x in 2:length(ine_all)){
+    ine_all2$DataInfo = rbind(ine_all2$DataInfo, ine_all[[x]]$DataInfo)
+    ine_all2$AsyEst = rbind(ine_all2$AsyEst, ine_all[[x]]$AsyEst)
+    ine_all2$iNextEst = c(ine_all2$iNextEst, ine_all[[x]]$iNextEst)
+  }
+    return(ine_all2)
+}
+
+srs_otu_list_ine_out = ine.list(srs_otu_list_ine)
+```
+
+## Plotting
+```{r,fig.width=28, fig.height=8, error=FALSE}
+po1 = ggiNEXT(srs_otu_list_ine_out, facet.var = "order", type=1) + theme_bw(base_size=25) +
+  ylab("OTU") + xlab("Number of subsamples") +
+  scale_x_continuous(breaks = seq(0, 18, by = 1)) +
+  # scale_y_continuous(breaks = seq(0, 25000, by = 5000)) +
+  theme(legend.position="none", axis.text.x = element_text(size=rel(0.6), angle=35, hjust=0.5, vjust=0.8),
+        panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.border = element_rect(colour = "black", fill=NA))
+
+
+po2 = ggiNEXT(srs_otu_list_ine_out, type=2) + theme_bw(base_size=25) + xlab("Number of subsamples") +
+  # scale_x_continuous(breaks = seq(0, 18, by = 1)) +
+  # scale_y_continuous(breaks = seq(0, 1, by = 0.05)) +
+  theme(#legend.position = c(0.8,0.42),
+        legend.text = element_text(size =18),
+        axis.line = element_line(colour = "black"),
+        axis.text.x = element_text(size=rel(0.6), angle=35, hjust=0.5, vjust=0.8),
+        panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.border = element_blank(), panel.background = element_blank()) +
+  geom_vline(xintercept = 4, color = "blue", linetype= "dashed", size=1.2)
+
+po3 = ggarrange(po1, po2, nrow = 1, widths = c(0.6, 0.4))
+po3
+# save tiff
+tiff(filename = "./output/inext_zizka_subsample_reads.tiff", width = 28, height = 8, units = "in", pointsize = 25, compression = "lzw", res=600)
+plot(po3)
+dev.off()
+```
+
+
+## Compare size & coverage
+### level 0.95
+```{r}
+# estimateD wrapper for incidence_raw present absent
+est2 <- function(TK_sample){
+  require(iNEXT)
+  require(tidyverse)
+  require(phyloseq)
+  a = srs_otu_list[TK_sample] # need to rename as chang the list object
+  b = estimateD(a, datatype="incidence_raw", base="coverage", level=0.95, conf=0.95)
+  return(b)
+}
+
+library(doParallel)
+ncores <- detectCores(logical=F) # physical cores
+ncores = 20
+cl <- makeCluster(ncores)
+registerDoParallel(cl)
+
+temp = sort(unique(meta$lib_name))
+
+system.time(srs_est2_result95 <- foreach(i=temp) %dopar% est2(i)) # another way
+stopCluster(cl)
+
+srs_est2_result95_v2 = as.data.frame(do.call(rbind, srs_est2_result95))
+srs_est2_result95_v2 %>% filter(order == 0) %>% arrange(site)
+```
+
+### level 0.90
+```{r}
+# estimateD wrapper for incidence_raw present absent
+est2 <- function(TK_sample){
+  require(iNEXT)
+  require(tidyverse)
+  require(phyloseq)
+  a = srs_otu_list[TK_sample] # need to rename as chang the list object
+  b = estimateD(a, datatype="incidence_raw", base="coverage", level=0.90, conf=0.95)
+  return(b)
+}
+
+library(doParallel)
+ncores <- detectCores(logical=F) # physical cores
+ncores = 20
+cl <- makeCluster(ncores)
+registerDoParallel(cl)
+
+temp = sort(unique(meta$lib_name))
+
+system.time(srs_est2_result90 <- foreach(i=temp) %dopar% est2(i)) # another way
+stopCluster(cl)
+
+srs_est2_result90_v2 = as.data.frame(do.call(rbind, srs_est2_result90 ))
+srs_est2_result90_v2 %>% filter(order == 0) %>% arrange(site)
+```
+
+### size 4
+```{r}
+est2 <- function(TK_sample){
+  require(iNEXT)
+  require(tidyverse)
+  require(phyloseq)
+  a = srs_otu_list[TK_sample] # need to rename as chang the list object
+  b = estimateD(a, datatype="incidence_raw", base="size", level=4, conf=0.95) # change the level appropriately
+  return(b)
+}
+
+library(doParallel)
+ncores <- detectCores(logical=F) # physical cores
+ncores = 20
+cl <- makeCluster(ncores)
+registerDoParallel(cl)
+
+temp = sort(unique(meta$lib_name))
+system.time(srs_est_otu_size4 <- foreach(i=temp) %dopar% est2(i))
+stopCluster(cl)
+
+srs_est_otu_size4_v2 = as.data.frame(do.call(rbind, srs_est_otu_size4))
+srs_est_otu_size4_v2 %>% filter(order == 0) %>% arrange(site)
+```
+
+```{r}
+srs_est_otu_size4_v2_SC = srs_est_otu_size4_v2 %>% filter(order == 0) %>% arrange(site)
+mean(srs_est_otu_size4_v2_SC$SC)
+sd(srs_est_otu_size4_v2_SC$SC)
+```
+
+### size 3
+```{r}
+est2 <- function(TK_sample){
+  require(iNEXT)
+  require(tidyverse)
+  require(phyloseq)
+  a = srs_otu_list[TK_sample] # need to rename as chang the list object
+  b = estimateD(a, datatype="incidence_raw", base="size", level=3, conf=0.95) # change the level appropriately
+  return(b)
+}
+
+library(doParallel)
+ncores <- detectCores(logical=F) # physical cores
+ncores = 20
+cl <- makeCluster(ncores)
+registerDoParallel(cl)
+
+temp = sort(unique(meta$lib_name))
+system.time(srs_est_otu_size3 <- foreach(i=temp) %dopar% est2(i))
+stopCluster(cl)
+
+srs_est_otu_size3_v2 = as.data.frame(do.call(rbind, srs_est_otu_size3))
+srs_est_otu_size3_v2 %>% filter(order == 0) %>% arrange(site)
+```
+
+```{r}
+srs_est_otu_size3_v2_SC = srs_est_otu_size3_v2 %>% filter(order == 0) %>% arrange(site)
+mean(srs_est_otu_size3_v2_SC$SC)
+sd(srs_est_otu_size3_v2_SC$SC)
+```
+
+### size 9
+```{r}
+est2 <- function(TK_sample){
+  require(iNEXT)
+  require(tidyverse)
+  require(phyloseq)
+  a = srs_otu_list[TK_sample] # need to rename as chang the list object
+  b = estimateD(a, datatype="incidence_raw", base="size", level=9, conf=0.95) # change the level appropriately
+  return(b)
+}
+
+library(doParallel)
+ncores <- detectCores(logical=F) # physical cores
+ncores = 20
+cl <- makeCluster(ncores)
+registerDoParallel(cl)
+
+temp = sort(unique(meta$lib_name))
+system.time(srs_est_otu_size9 <- foreach(i=temp) %dopar% est2(i))
+stopCluster(cl)
+
+srs_est_otu_size9_v2 = as.data.frame(do.call(rbind, srs_est_otu_size9))
+srs_est_otu_size9_v2 %>% filter(order == 0) %>% arrange(site)
+```
+
+
+# save rdata
+```{r}
+save.image("./otus300.RData")
+```
+
+
+# Session info 
+```{r}
+sessioninfo::session_info(pkgs="attached")
+```

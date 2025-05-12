@@ -1,0 +1,107 @@
+---
+title: "Find NUMTS on OTUs of Zizka data"
+output:
+  html_notebook:
+    code_folding: show
+    df_print: paged
+    fig_width: 12
+    fig_height: 8
+    fig_caption: yes
+    toc: yes
+    toc_depth: 6
+    toc_float:
+      collapsed: no
+---
+
+```{css, echo=FALSE}
+.scroll-200 {
+  max-height: 200px;
+  overflow-y: auto;
+  background-color: inherit;
+}
+```
+
+```{css, echo=FALSE}
+.tocify .tocify-header {
+  #position: fixed;
+  #top: 50px;
+  #left: 50px;
+  width: 350px;
+  #height: 400px;
+  }
+```
+
+```{r}
+suppressPackageStartupMessages({
+  library(tidyverse)
+  library(reshape2)
+  library(Biostrings)
+})
+```
+
+
+# Find NUMTS
+## import original refseq file
+```{r}
+otus97.final = readDNAStringSet("./output/otus_finalize/otus97.final.300.fa")
+otus97.final
+range(otus97.final@ranges@width)
+```
+
+## translate to protein
+
+**Proper translate is the start from the second nucleotide**
+
+```{r}
+otus97.final.2nd = subseq(otus97.final, start=2)
+otus97.final.2nd
+range(otus97.final.2nd@ranges@width)
+```
+
+
+```{r warning=FALSE}
+library(Biostrings)
+# GENETIC_CODE_TABLE[1:10 , ]
+
+otus97.final.2nd.prot = translate(otus97.final.2nd, genetic.code = getGeneticCode("5"), if.fuzzy.codon = "X") # "SGC4"
+otus97.final.2nd.prot
+range(otus97.final.2nd.prot@ranges@width)
+```
+
+## remove asterisks
+```{r}
+otus97.final.2nd.prot.df = data.frame(otus97.final.2nd.prot)
+head(otus97.final.2nd.prot.df)
+otus97.final.2nd.prot.df$id = rownames(otus97.final.2nd.prot.df)
+names(otus97.final.2nd.prot.df)[1] = "prot"
+head(otus97.final.2nd.prot.df)
+
+nrow(otus97.final.2nd.prot.df)
+otus97.final.2nd.prot.df %>% filter(str_detect(prot, "\\*")) %>% nrow()
+otus97.final.numts = otus97.final.2nd.prot.df %>% filter(str_detect(prot, "\\*")) %>% pull(id)
+otus97.final.2nd.prot.df = otus97.final.2nd.prot.df %>% filter(!str_detect(prot, "\\*"))
+nrow(otus97.final.2nd.prot.df)
+```
+
+## subset otus97.final
+```{r}
+otus97.final.nonumts = otus97.final[names(otus97.final) %in% otus97.final.2nd.prot.df$id]
+otus97.final.nonumts
+range(otus97.final.nonumts@ranges@width)
+```
+
+## save to fasta otus97.final.300.nonumts.fa
+```{r}
+writeXStringSet(otus97.final.nonumts, "./output/otus_finalize/otus97.final.300.nonumts.fa")
+```
+
+```{bash}
+cd ./output/otus_finalize/
+~/seqkit seq -w 0 ./otus97.final.300.nonumts.fa > temp && mv temp ./otus97.final.300.nonumts.fa
+```
+
+
+# Session info
+```{r}
+sessioninfo::session_info(pkgs="attached")
+```
