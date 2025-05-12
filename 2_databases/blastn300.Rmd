@@ -1,0 +1,411 @@
+---
+title: "Blastn300 results"
+output:
+  html_notebook:
+    code_folding: show
+    df_print: paged
+    fig_retina: 1
+    fig_width: 12
+    fig_height: 8
+    fig_caption: yes
+    toc: yes
+    toc_depth: 6
+    toc_float:
+      collapsed: no
+---
+
+```{css, echo=FALSE}
+.scroll-200 {
+  max-height: 200px;
+  overflow-y: auto;
+  background-color: inherit;
+}
+```
+
+```{css, echo=FALSE}
+.tocify .tocify-header {
+  #position: fixed;
+  #top: 50px;
+  #left: 50px;
+  width: 350px;
+  #height: 400px;
+  }
+```
+
+```{r}
+suppressPackageStartupMessages({
+  library(tidyverse)
+  library(reshape2)
+  library(Biostrings)
+  library(ggpubr)
+  })
+```
+
+```{r}
+rm(list=ls())
+gc()
+```
+
+# blastn results
+## import files
+```{r}
+blst_mydb = read.table("./blast_db_results/db5.local.out.top")
+blst_mydb = blst_mydb[order(blst_mydb$V1), ]
+
+blst_imdb = read.table("./blast_db_results/db5.regional.out.top")
+blst_imdb = blst_imdb[order(blst_imdb$V1), ]
+
+blst_global = read.table("./blast_db_results/db5.global.out.top")
+blst_global = blst_global[order(blst_global$V1), ]
+
+
+dim(blst_mydb)[1] ; dim(blst_imdb)[1] ; dim(blst_global)[1]
+
+temp = inner_join(blst_mydb, blst_imdb, by="V1")
+temp2 = inner_join(temp, blst_global, by="V1")
+blst_otus = temp2$V1
+rm(temp, temp2)
+
+blst_mydb2 = subset(blst_mydb, V1 %in% blst_otus )
+blst_imdb2 = subset(blst_imdb, V1 %in% blst_otus)
+blst_global2 = subset(blst_global, V1 %in% blst_otus)
+
+dim(blst_mydb2)[1] ; dim(blst_imdb2)[1] ; dim(blst_global2)[1]
+# save the global for later comparison with tblastx
+saveRDS(blst_global2, "./results_blastn.rds")
+```
+
+# statistics
+## bitscore median
+```{r}
+blst_increase_bit = data.frame("V1"=blst_mydb2$V1, "mydb"=blst_mydb2$V12, "imdb"=blst_imdb2$V12, "global"=blst_global2$V12)
+data.frame(
+  "region" = c("mydb", "imdb", "global"),
+  "Median" = round(c(median(blst_increase_bit$mydb), median(blst_increase_bit$imdb), median(blst_increase_bit$global)), 2),
+  "Range_bottom" = round(c(range(blst_increase_bit$mydb)[1], 
+                    range(blst_increase_bit$imdb)[1], 
+                    range(blst_increase_bit$global)[1]), 2),
+  "Range_top" = round(c(range(blst_increase_bit$mydb)[2], 
+                    range(blst_increase_bit$imdb)[2], 
+                    range(blst_increase_bit$global)[2]), 2)
+)
+```
+
+## pident median
+```{r}
+blst_increase = data.frame("V1"=blst_mydb2$V1, "mydb"=blst_mydb2$V3, "imdb"=blst_imdb2$V3, "global"=blst_global2$V3)
+data.frame(
+  "region" = c("mydb", "imdb", "global"),
+  "Median" = round(c(median(blst_increase$mydb), median(blst_increase$imdb), median(blst_increase$global)), 2),
+  "Range_bottom" = round(c(range(blst_increase$mydb)[1], 
+                    range(blst_increase$imdb)[1], 
+                    range(blst_increase$global)[1]), 2),
+  "Range_top" = round(c(range(blst_increase$mydb)[2], 
+                    range(blst_increase$imdb)[2], 
+                    range(blst_increase$global)[2]), 2)
+)
+```
+
+### pident median increment
+```{r}
+# global - local(mydb)
+paste("median global-local", round(median(blst_increase$global) - median(blst_increase$mydb), 2))
+
+# global - regional(imdb)
+paste("median global-regional", round(median(blst_increase$global) - median(blst_increase$imdb), 2))
+
+# regional(imdb) - local(mydb)
+paste("median regional-local", round(median(blst_increase$imdb) - median(blst_increase$mydb), 2))
+```
+
+# statistic2
+## Normality
+```{r}
+# bitscore
+ks.test(blst_mydb2$V12, 'pnorm')
+ks.test(blst_imdb2$V12, 'pnorm')
+ks.test(blst_global2$V12, 'pnorm')
+```
+**Bitscore values are not normally distributed**
+
+### mydb vs imdb
+Is imdb greater than mydb?
+
+#### bit score
+```{r}
+wilcox.test(blst_imdb2$V12, blst_mydb2$V12, paired = TRUE, alt="greater")
+median(blst_imdb2$V12)
+median(blst_mydb2$V12)
+```
+
+#### Pident
+```{r}
+# 
+wilcox.test(blst_imdb2$V3, blst_mydb2$V3, paired = TRUE, alt="greater")
+median(blst_imdb2$V3)
+median(blst_mydb$V3)
+```
+**YES pident & YES bitscore imdb are bigger than mydb**
+
+### mydb vs global
+is global greater than mydb?
+
+#### bit score
+```{r}
+# Bit score
+wilcox.test(blst_global2$V12, blst_mydb2$V12, paired = TRUE, alt="greater")
+median(blst_global2$V12)
+median(blst_mydb$V12)
+```
+
+#### Pident
+```{r}
+wilcox.test(blst_global2$V3, blst_mydb2$V3, paired = TRUE, alt="greater")
+median(blst_global2$V3)
+median(blst_mydb2$V3)
+```
+**YES pident & YES bitscore global are bigger than mydb**
+
+### global vs imdb
+Is global greater than imdb?
+
+#### bit score
+```{r}
+wilcox.test(blst_global2$V12, blst_imdb2$V12, paired = TRUE, alt="greater")
+median(blst_imdb2$V12)
+median(blst_global2$V12)
+```
+
+#### Pident
+```{r}
+wilcox.test(blst_global2$V3, blst_imdb2$V3, paired = TRUE, alt="greater")
+median(blst_imdb2$V3)
+median(blst_global2$V3)
+```
+**Yes pident & Yes bitscore global are bigger than imdb**
+
+# blastn finished
+```{r}
+rm(list=ls())
+gc()
+```
+
+# tblastx results
+## import files
+```{r}
+blst_mydb = read.table("./blast_db_results/tblastx.db5.local.out.top")
+blst_mydb = blst_mydb[order(blst_mydb$V1), ]
+
+blst_imdb = read.table("./blast_db_results/tblastx.db5.regional.out.top")
+blst_imdb = blst_imdb[order(blst_imdb$V1), ]
+
+blst_global = read.table("./blast_db_results/tblastx.db5.global.out.top")
+blst_global = blst_global[order(blst_global$V1), ]
+
+dim(blst_mydb)[1] ; dim(blst_imdb)[1] ; dim(blst_global)[1]
+
+temp = inner_join(blst_mydb, blst_imdb, by="V1")
+temp2 = inner_join(temp, blst_global, by="V1")
+blst_otus = temp2$V1
+rm(temp, temp2)
+
+blst_mydb2 = subset(blst_mydb, V1 %in% blst_otus )
+blst_imdb2 = subset(blst_imdb, V1 %in% blst_otus)
+blst_global2 = subset(blst_global, V1 %in% blst_otus)
+
+dim(blst_mydb2)[1] ; dim(blst_imdb2)[1] ; dim(blst_global2)[1]
+# save the global for later comparison with blastn
+saveRDS(blst_global2, "./results_tblastx.rds")
+```
+# statistic
+## bitscore median
+```{r}
+blst_increase_bit = data.frame("V1"=blst_mydb2$V1, "mydb"=blst_mydb2$V12, "imdb"=blst_imdb2$V12, "global"=blst_global2$V12)
+data.frame(
+  "region" = c("mydb", "imdb", "global"),
+  "Median" = round(c(median(blst_increase_bit$mydb), median(blst_increase_bit$imdb), median(blst_increase_bit$global)), 2),
+  "Range_bottom" = round(c(range(blst_increase_bit$mydb)[1], 
+                    range(blst_increase_bit$imdb)[1], 
+                    range(blst_increase_bit$global)[1]), 2),
+  "Range_top" = round(c(range(blst_increase_bit$mydb)[2], 
+                    range(blst_increase_bit$imdb)[2], 
+                    range(blst_increase_bit$global)[2]), 2)
+)
+```
+
+## pident median
+```{r}
+blst_increase = data.frame("V1"=blst_mydb2$V1, "mydb"=blst_mydb2$V3, "imdb"=blst_imdb2$V3, "global"=blst_global2$V3)
+data.frame(
+  "region" = c("mydb", "imdb", "global"),
+  "Median" = round(c(median(blst_increase$mydb), median(blst_increase$imdb), median(blst_increase$global)), 2),
+  "Range_bottom" = round(c(range(blst_increase$mydb)[1], 
+                    range(blst_increase$imdb)[1], 
+                    range(blst_increase$global)[1]), 2),
+  "Range_top" = round(c(range(blst_increase$mydb)[2], 
+                    range(blst_increase$imdb)[2], 
+                    range(blst_increase$global)[2]), 2)
+)
+```
+
+### pident median increment
+```{r}
+# global - local(mydb)
+paste("median global-local", round(median(blst_increase$global) - median(blst_increase$mydb), 2))
+
+# global - regional(imdb)
+paste("median global-regional", round(median(blst_increase$global) - median(blst_increase$imdb), 2))
+
+# regional(imdb) - local(mydb)
+paste("median regional-local", round(median(blst_increase$imdb) - median(blst_increase$mydb), 2))
+```
+
+# statistic2
+## Normality
+```{r}
+# bitscore
+ks.test(blst_mydb2$V12, 'pnorm')
+ks.test(blst_imdb2$V12, 'pnorm')
+ks.test(blst_global2$V12, 'pnorm')
+```
+**Bitscore values are not normally distributed**
+
+### mydb vs imdb
+Is imdb greater than mydb?
+
+#### bit score
+```{r}
+wilcox.test(blst_imdb2$V12, blst_mydb2$V12, paired = TRUE, alt="greater")
+median(blst_imdb2$V12)
+median(blst_mydb2$V12)
+```
+
+#### Pident
+```{r}
+wilcox.test(blst_imdb2$V3, blst_mydb2$V3, paired = TRUE, alt="greater")
+median(blst_imdb2$V3)
+median(blst_mydb$V3)
+```
+**YES pident & YES bitscore imdb are bigger than mydb**
+
+### mydb vs global
+is global greater than mydb
+
+#### bit score
+```{r}
+wilcox.test(blst_global2$V12, blst_mydb2$V12, paired = TRUE, alt="greater")
+median(blst_global2$V12)
+median(blst_mydb$V12)
+```
+
+#### Pident
+```{r}
+# Pident
+wilcox.test(blst_global2$V3, blst_mydb2$V3, paired = TRUE, alt="greater")
+median(blst_global2$V3)
+median(blst_mydb2$V3)
+```
+**YES pident & YES bitscore global are bigger than mydb**
+
+### global vs imdb
+Is global greater than imdb
+
+#### bit score
+```{r}
+median(blst_imdb2$V12)
+median(blst_global2$V12)
+wilcox.test(blst_global2$V12, blst_imdb2$V12, paired = TRUE, alt="greater")
+```
+
+#### Pident
+```{r}
+# Pident
+median(blst_imdb2$V3)
+median(blst_global2$V3)
+wilcox.test(blst_global2$V3, blst_imdb2$V3, paired = TRUE, alt="greater")
+```
+**Yes pident & Yes bitscore global are bigger than imdb**
+
+# tblastx finished
+```{r}
+rm(list=ls())
+gc()
+```
+
+# bitscore blastn vs tblastx
+```{r}
+blastn=readRDS("./results_blastn.rds")
+tblastx=readRDS("./results_tblastx.rds")
+```
+
+# Subsetting and merging data
+```{r}
+# Relative bitscore
+max(blastn$V12)
+# [1] 579
+blastn$bit = blastn$V12/579*100
+
+max(tblastx$V12)
+# [1] 273
+tblastx$bit = tblastx$V12/273*100
+
+blastn_pid = blastn[,c(1,3,19)]
+tblastx_pid = tblastx[,c(1,3,19)]
+
+global_pid = inner_join(blastn_pid, tblastx_pid, by="V1")
+head(global_pid)
+names(global_pid) = c("otu_id", "blast_pid", "blast_bitrel", "tblastx_pid", "tblastx_bitrel")
+head(global_pid)
+```
+
+# Bit relative
+## Normality test Bit relative
+```{r}
+ks.test(global_pid$blast_bitrel, 'pnorm')
+ks.test(global_pid$tblastx_bitrel, 'pnorm')
+```
+## bitrel wilcox test blastn vs tblastx
+```{r}
+paste0("median tblastx: ",  round(median(global_pid$tblastx_bitrel), 2), ", ", 
+      "min: ", round(min(global_pid$tblastx_bitrel),2), ", ", 
+      "max: ", round(max(global_pid$tblastx_bitrel),2))
+
+paste("median blastn: ",  round(median(global_pid$blast_bitrel), 2), ", ", 
+      "min: ", round(min(global_pid$blast_bitrel),2), ", ", 
+      "max: ", round(max(global_pid$blast_bitrel),2))
+
+paste("mean tblastx:", round(mean(global_pid$tblastx_bitrel),2), "+/-", round(sd(global_pid$tblastx_bitrel),2))
+paste("mean blastn:", round(mean(global_pid$blast_bitrel),2), "+/-", round(sd(global_pid$blast_bitrel),2))
+
+# is tblastx bit relative is greater than blastn bitrel
+wilcox.test(global_pid$tblastx_bitrel, global_pid$blast_bitrel, paired = TRUE, alt="greater") # yes
+```
+**Notes: The relative bitscore tblastx is significantly greater than blastn**
+
+# Pident blastn vs tbalstx
+```{r}
+ks.test(global_pid$blast_pid, 'pnorm')
+ks.test(global_pid$tblastx_pid, 'pnorm')
+```
+
+## pidentrel wilcox test blastn vs tblastx
+```{r}
+paste0("median tblastx: ",  round(median(global_pid$tblastx_pid), 2), ", ", 
+      "min: ", round(min(global_pid$tblastx_pid),2), ", ", 
+      "max: ", round(max(global_pid$tblastx_pid),2))
+
+paste("median blastn: ",  round(median(global_pid$blast_pid), 2), ", ", 
+      "min: ", round(min(global_pid$blast_pid),2), ", ", 
+      "max: ", round(max(global_pid$blast_pid),2))
+
+paste("mean tblastx:", round(mean(global_pid$tblastx_pid),2), "+/-", round(sd(global_pid$tblastx_pid),2))
+paste("mean blastn:", round(mean(global_pid$blast_pid),2), "+/-", round(sd(global_pid$blast_bitrel),2))
+
+# is tblastx bit relative is greater than blastn bitrel
+wilcox.test(global_pid$tblastx_pid, global_pid$blast_pid, paired = TRUE, alt="greater") # yes
+```
+
+# Session info
+```{r}
+sessioninfo::session_info(pkgs="attached")
+```

@@ -1,0 +1,729 @@
+---
+title: "db5 remove NUMTs results3"
+output:
+  html_notebook:
+    code_folding: show
+    df_print: paged
+    fig_width: 12
+    fig_height: 8
+    fig_caption: yes
+    toc: yes
+    toc_depth: 6
+    toc_float:
+      collapsed: no
+---
+
+```{css, echo=FALSE}
+.scroll-200 {
+  max-height: 200px;
+  overflow-y: auto;
+  background-color: inherit;
+}
+```
+
+```{css, echo=FALSE}
+.tocify .tocify-header {
+  #position: fixed;
+  #top: 50px;
+  #left: 50px;
+  width: 350px;
+  #height: 400px;
+  }
+```
+
+```{r}
+suppressPackageStartupMessages({
+  library(tidyverse)
+  library(reshape2)
+  library(Biostrings)
+  library(gridExtra)
+  library(VennDiagram)
+  library(fastSave)
+})
+```
+
+# local
+## find NUMTS
+### import file
+```{r}
+db5.local = readDNAStringSet("./results/local/db5.local.min300.degap.fa")
+db5.local
+range(db5.local@ranges@width)
+```
+
+### translate to protein
+```{r warning=FALSE}
+# library(Biostrings)
+# GENETIC_CODE_TABLE[1:10 , ]
+
+db5.local.2nd = subseq(db5.local, start=2)
+
+db5.local.2nd.prot = translate(db5.local.2nd, genetic.code = getGeneticCode("5"), if.fuzzy.codon = "X") # "SGC4"
+db5.local.2nd.prot
+range(db5.local.2nd.prot@ranges@width)
+```
+
+### check asterisks
+```{r}
+db5.local.2nd.prot.df = data.frame(db5.local.2nd.prot)
+head(db5.local.2nd.prot.df)
+db5.local.2nd.prot.df$id = rownames(db5.local.2nd.prot.df)
+names(db5.local.2nd.prot.df)[1] = "prot"
+
+nrow(db5.local.2nd.prot.df)
+db5.local.2nd.prot.df %>% filter(str_detect(prot, "\\*")) %>% nrow()
+temp = db5.local.2nd.prot.df %>% filter(str_detect(prot, "\\*")) %>% pull(id)
+length(temp)
+head(temp)
+```
+
+
+### remove asterisks
+```{r}
+db5.local.2nd.prot.df = db5.local.2nd.prot.df %>% filter(!str_detect(prot, "\\*"))
+nrow(db5.local.2nd.prot.df)
+```
+
+### save nonumts fasta
+```{r}
+db5.local.nonumts = db5.local[names(db5.local) %in% db5.local.2nd.prot.df$id]
+db5.local.nonumts
+
+writeXStringSet(db5.local.nonumts, "./results/local/db5.local.nonumts.fanew") # double check
+```
+
+### save rdata
+```{r}
+system.time(fastSave::save.image.pigz("./results/local/db5_nonumts_local.RDatanew", n.cores = 8))
+```
+
+## MAPUC
+### define mism function for MAPUC
+```{r}
+mism <- function(x,sh) { # x is object taxa level, sh is df from map uc
+  uc_mism =c()
+  a = rev(x)[1]
+  # Species
+  temp = sh
+  temp$V9_2 = str_replace(temp$V9_2, paste0(".*", a), "") %>% str_replace(";:.*", "")
+  temp$V10_2 = str_replace(temp$V10_2, paste0(".*", a), "") %>% str_replace(";:.*", "")
+  b = length(which(temp$V10_2 != temp$V9_2)) # mismatch dataframe for each taxa level
+  c = sub(",", "", a)
+  c = sub(":", "", c)
+  d = data.frame("tax_lev"=c, "nos.mismatch" = b)
+  uc_mism = rbind(uc_mism, d)
+  uc_mism_s = temp[which(temp$V10_2 != temp$V9_2),]
+  
+  # Genus
+  a = rev(x)[2]
+  temp = sh
+  temp$V9_2 = str_replace(temp$V9_2, paste0(".*", a), "") %>% str_replace(",s:.*", "")
+  temp$V10_2 = str_replace(temp$V10_2, paste0(".*", a), "") %>% str_replace(",s:.*", "")
+  b = length(which(temp$V10_2 != temp$V9_2))
+  c = sub(",", "", a)
+  c = sub(":", "", c)
+  d = data.frame("tax_lev"=c, "nos.mismatch" = b)
+  uc_mism = rbind(uc_mism, d)
+  uc_mism_g = temp[which(temp$V10_2 != temp$V9_2), ]
+  
+  # Family
+  a = rev(x)[3]
+  temp = sh
+  temp$V9_2 = str_replace(temp$V9_2, paste0(".*", a), "") %>% str_replace(",g:.*", "")
+  temp$V10_2 = str_replace(temp$V10_2, paste0(".*", a), "") %>% str_replace(",g:.*", "")
+  b = length(which(temp$V10_2 != temp$V9_2))
+  c = sub(",", "", a)
+  c = sub(":", "", c)
+  d = data.frame("tax_lev"=c, "nos.mismatch" = b)
+  uc_mism = rbind(uc_mism, d)
+  uc_mism_f = temp[which(temp$V10_2 != temp$V9_2), ]
+  
+  # Order
+  a = rev(x)[4]
+  temp = sh
+  temp$V9_2 = str_replace(temp$V9_2, paste0(".*", a), "") %>% str_replace(",f:.*", "")
+  temp$V10_2 = str_replace(temp$V10_2, paste0(".*", a), "") %>% str_replace(",f:.*", "")
+  b = length(which(temp$V10_2 != temp$V9_2))
+  c = sub(",", "", a)
+  c = sub(":", "", c)
+  d = data.frame("tax_lev"=c, "nos.mismatch" = b)
+  uc_mism = rbind(uc_mism, d)
+  uc_mism_o = temp[which(temp$V10_2 != temp$V9_2), ]
+  
+  uc_mism_list = list("mism_df"      = uc_mism,
+                      "mism_species" = uc_mism_s,
+                      "mism_genus"   = uc_mism_g,
+                      "mism_family"  = uc_mism_f,
+                      "mism_order"   = uc_mism_o)
+
+  print(uc_mism)
+  return (uc_mism_list)
+  # rm(uc_mism, temp, a,b,c,d, uc_mism_s, uc_mism_g, uc_mism_f, uc_mism_o, uc_mism_list)
+}
+```
+
+### import mapuc file
+```{r}
+mapuc = read.delim("./results/local/db5.local.nonumts.uniq.uc", header = FALSE)
+mapuc_seed = mapuc %>% select(V1, V9) %>% filter(V1 == "S")
+unique(mapuc_seed$V1) # check what they are, there are only S not H and C
+mapuc_hit = mapuc %>% select(V1, V9, V10) %>% filter(V1 == "H")
+unique(mapuc_hit$V1) # check what they are, there are only H
+
+# V1 = S/H/C
+# v9 = label_taxa
+# v10 = Label of target sequence (H records only)
+# V9_2 = V9
+# V10_2 = V10
+mapuc_hit$V9_2 = sub(".*tax=", "", mapuc_hit$V9)
+mapuc_hit$V10_2 = sub(".*tax=", "", mapuc_hit$V10)
+taxa = c(",o:", ",f:", ",g:", ",s:")
+mapuc_mism = mism(taxa, mapuc_hit)
+```
+
+### Dropping_seq
+**Drop or remove entries that belong to clusters that have multiple species**
+```{r}
+temp = unique(mapuc_mism$mism_species$V10)
+str(temp)
+head(temp)
+
+db5.local.uniq = readDNAStringSet("./results/local/db5.local.nonumts.uniq.fa") # usearch fastx output
+db5.local.uniq
+db5.local.uniq.df = data.frame(db5.local.uniq)
+db5.local.uniq.df$taxa = db5.local.uniq@ranges@NAMES
+
+head(db5.local.uniq.df)
+head(db5.local.uniq.df$taxa)
+db5.local.uniq.df$taxa = str_replace(db5.local.uniq.df$taxa, "size=.*", "")
+head(db5.local.uniq.df$taxa)
+db5.local.uniq.df$taxa = str_replace(db5.local.uniq.df$taxa, " ;", " ")
+head(db5.local.uniq.df$taxa)
+
+head(temp)
+nrow(db5.local.uniq.df) ; length(temp)
+
+db5.local.uniq.df = subset(db5.local.uniq.df, !(taxa %in% temp)) # dropping bad sequences
+nrow(db5.local.uniq.df)
+```
+
+```{r}
+# reformat for blast ---
+head(db5.local.uniq.df$taxa)
+db5.local.uniq.df$taxa = str_replace_all(db5.local.uniq.df$taxa, "; ", " ") # replace semicolumn+space with space
+db5.local.uniq.df$taxa = str_replace_all(db5.local.uniq.df$taxa, ";", " ") # replace semicolumn with space
+db5.local.uniq.df$taxa = str_replace_all(db5.local.uniq.df$taxa, ",", " ") # replace comma with space
+head(db5.local.uniq.df$taxa)
+# reformat for blast ===
+```
+
+### save to fasta
+```{r}
+temp = DNAStringSet(db5.local.uniq.df$db5.local.uniq)
+names(temp) = db5.local.uniq.df$taxa
+temp
+range(temp@ranges@width)
+writeXStringSet(temp, "./results/local/db5.local.nonumts.uniq.mapuc.fanew") # double check
+rm(temp)
+gc()
+```
+
+### save rdata
+```{r}
+gc()
+system.time(fastSave::save.image.pigz("./results/local/db5_nonumts_local.RData", n.cores = 8))
+```
+
+# regional
+## find NUMTS
+### import file
+```{r}
+db5.regional = readDNAStringSet("./results/regional/db5.regional.min300.degap.fa")
+db5.regional
+range(db5.regional@ranges@width)
+```
+
+### translate to protein
+```{r warning=FALSE}
+# library(Biostrings)
+# GENETIC_CODE_TABLE[1:10 , ]
+
+db5.regional.2nd = subseq(db5.regional, start=2)
+
+db5.regional.2nd.prot = translate(db5.regional.2nd, genetic.code = getGeneticCode("5"), if.fuzzy.codon = "X") # "SGC4"
+db5.regional.2nd.prot
+range(db5.regional.2nd.prot@ranges@width)
+```
+
+### check asterisks
+```{r}
+db5.regional.2nd.prot.df = data.frame(db5.regional.2nd.prot)
+head(db5.regional.2nd.prot.df)
+db5.regional.2nd.prot.df$id = rownames(db5.regional.2nd.prot.df)
+names(db5.regional.2nd.prot.df)[1] = "prot"
+
+nrow(db5.regional.2nd.prot.df)
+db5.regional.2nd.prot.df %>% filter(str_detect(prot, "\\*")) %>% nrow()
+temp = db5.regional.2nd.prot.df %>% filter(str_detect(prot, "\\*")) %>% pull(id)
+length(temp)
+head(temp)
+```
+
+### remove asterisks
+```{r}
+db5.regional.2nd.prot.df = db5.regional.2nd.prot.df %>% filter(!str_detect(prot, "\\*"))
+nrow(db5.regional.2nd.prot.df)
+```
+
+### save nonumts fasta
+```{r}
+db5.regional.nonumts = db5.regional[names(db5.regional) %in% db5.regional.2nd.prot.df$id]
+db5.regional.nonumts
+
+writeXStringSet(db5.regional.nonumts, "./results/regional/db5.regional.nonumts.fa") # double check
+```
+
+### save rdata
+```{r}
+system.time(fastSave::save.image.pigz("./results/regional/db5_nonumts_regional.RData", n.cores = 8))
+```
+
+### Session info
+```{r}
+sessioninfo::session_info(pkgs="attached")
+```
+
+## MAPUC
+### define mism function for MAPUC
+```{r}
+mism <- function(x,sh) { # x is object taxa level, sh is df from map uc
+  uc_mism =c()
+  a = rev(x)[1]
+  # Species
+  temp = sh
+  temp$V9_2 = str_replace(temp$V9_2, paste0(".*", a), "") %>% str_replace(";:.*", "")
+  temp$V10_2 = str_replace(temp$V10_2, paste0(".*", a), "") %>% str_replace(";:.*", "")
+  b = length(which(temp$V10_2 != temp$V9_2)) # mismatch dataframe for each taxa level
+  c = sub(",", "", a)
+  c = sub(":", "", c)
+  d = data.frame("tax_lev"=c, "nos.mismatch" = b)
+  uc_mism = rbind(uc_mism, d)
+  uc_mism_s = temp[which(temp$V10_2 != temp$V9_2),]
+  
+  # Genus
+  a = rev(x)[2]
+  temp = sh
+  temp$V9_2 = str_replace(temp$V9_2, paste0(".*", a), "") %>% str_replace(",s:.*", "")
+  temp$V10_2 = str_replace(temp$V10_2, paste0(".*", a), "") %>% str_replace(",s:.*", "")
+  b = length(which(temp$V10_2 != temp$V9_2))
+  c = sub(",", "", a)
+  c = sub(":", "", c)
+  d = data.frame("tax_lev"=c, "nos.mismatch" = b)
+  uc_mism = rbind(uc_mism, d)
+  uc_mism_g = temp[which(temp$V10_2 != temp$V9_2), ]
+  
+  # Family
+  a = rev(x)[3]
+  temp = sh
+  temp$V9_2 = str_replace(temp$V9_2, paste0(".*", a), "") %>% str_replace(",g:.*", "")
+  temp$V10_2 = str_replace(temp$V10_2, paste0(".*", a), "") %>% str_replace(",g:.*", "")
+  b = length(which(temp$V10_2 != temp$V9_2))
+  c = sub(",", "", a)
+  c = sub(":", "", c)
+  d = data.frame("tax_lev"=c, "nos.mismatch" = b)
+  uc_mism = rbind(uc_mism, d)
+  uc_mism_f = temp[which(temp$V10_2 != temp$V9_2), ]
+  
+  # Order
+  a = rev(x)[4]
+  temp = sh
+  temp$V9_2 = str_replace(temp$V9_2, paste0(".*", a), "") %>% str_replace(",f:.*", "")
+  temp$V10_2 = str_replace(temp$V10_2, paste0(".*", a), "") %>% str_replace(",f:.*", "")
+  b = length(which(temp$V10_2 != temp$V9_2))
+  c = sub(",", "", a)
+  c = sub(":", "", c)
+  d = data.frame("tax_lev"=c, "nos.mismatch" = b)
+  uc_mism = rbind(uc_mism, d)
+  uc_mism_o = temp[which(temp$V10_2 != temp$V9_2), ]
+  
+  uc_mism_list = list("mism_df"      = uc_mism,
+                      "mism_species" = uc_mism_s,
+                      "mism_genus"   = uc_mism_g,
+                      "mism_family"  = uc_mism_f,
+                      "mism_order"   = uc_mism_o)
+
+  print(uc_mism)
+  return (uc_mism_list)
+  # rm(uc_mism, temp, a,b,c,d, uc_mism_s, uc_mism_g, uc_mism_f, uc_mism_o, uc_mism_list)
+}
+```
+
+### import mapuc file
+```{r}
+mapuc = read.delim("./results/regional/db5.regional.nonumts.uniq.uc", header = FALSE)
+mapuc_seed = mapuc %>% select(V1, V9) %>% filter(V1 == "S")
+unique(mapuc_seed$V1) # check what they are, there are only S not H and C
+mapuc_hit = mapuc %>% select(V1, V9, V10) %>% filter(V1 == "H")
+unique(mapuc_hit$V1) # check what they are, there are only H
+
+# V1 = S/H/C
+# v9 = label_taxa
+# v10 = Label of target sequence (H records only)
+# V9_2 = V9
+# V10_2 = V10
+mapuc_hit$V9_2 = sub(".*tax=", "", mapuc_hit$V9)
+mapuc_hit$V10_2 = sub(".*tax=", "", mapuc_hit$V10)
+taxa = c(",o:", ",f:", ",g:", ",s:")
+mapuc_mism = mism(taxa, mapuc_hit)
+```
+
+### Dropping_seq
+**Drop or remove entries that belong to clusters that have multiple species**
+```{r}
+temp = unique(mapuc_mism$mism_species$V10)
+str(temp)
+head(temp)
+
+db5.regional.uniq = readDNAStringSet("./results/regional/db5.regional.nonumts.uniq.fa") # usearch fastx output
+db5.regional.uniq
+db5.regional.uniq.df = data.frame(db5.regional.uniq)
+db5.regional.uniq.df$taxa = db5.regional.uniq@ranges@NAMES
+
+head(db5.regional.uniq.df)
+head(db5.regional.uniq.df$taxa)
+db5.regional.uniq.df$taxa = str_replace(db5.regional.uniq.df$taxa, "size=.*", "")
+head(db5.regional.uniq.df$taxa)
+db5.regional.uniq.df$taxa = str_replace(db5.regional.uniq.df$taxa, " ;", " ")
+head(db5.regional.uniq.df$taxa)
+
+head(temp)
+nrow(db5.regional.uniq.df) ; length(temp)
+
+db5.regional.uniq.df = subset(db5.regional.uniq.df, !(taxa %in% temp)) # dropping bad sequences
+nrow(db5.regional.uniq.df)
+```
+
+```{r}
+# reformat for blast ---
+head(db5.regional.uniq.df$taxa)
+db5.regional.uniq.df$taxa = str_replace_all(db5.regional.uniq.df$taxa, "; ", " ") # replace semicolumn+space with space
+db5.regional.uniq.df$taxa = str_replace_all(db5.regional.uniq.df$taxa, ";", " ") # replace semicolumn with space
+db5.regional.uniq.df$taxa = str_replace_all(db5.regional.uniq.df$taxa, ",", " ") # replace comma with space
+head(db5.regional.uniq.df$taxa)
+# reformat for blast ===
+```
+
+### save to fasta
+```{r}
+temp = DNAStringSet(db5.regional.uniq.df$db5.regional.uniq)
+names(temp) = db5.regional.uniq.df$taxa
+temp
+range(temp@ranges@width)
+writeXStringSet(temp, "./results/regional/db5.regional.nonumts.uniq.mapuc.fa") # double check
+rm(temp)
+```
+
+### save rdata
+```{r}
+gc()
+system.time(fastSave::save.image.pigz("./results/regional/db5_nonumts_regional.RData", n.cores = 8))
+```
+
+
+# global
+## find NUMTS
+### import file
+```{r}
+db5.global = readDNAStringSet("./results/global/db5.global.min300.degap.fa")
+db5.global
+range(db5.global@ranges@width)
+```
+
+### translate to protein
+```{r warning=FALSE}
+# library(Biostrings)
+# GENETIC_CODE_TABLE[1:10 , ]
+
+db5.global.2nd = subseq(db5.global, start=2)
+
+db5.global.2nd.prot = translate(db5.global.2nd, genetic.code = getGeneticCode("5"), if.fuzzy.codon = "X") # "SGC4"
+db5.global.2nd.prot
+range(db5.global.2nd.prot@ranges@width)
+```
+
+
+### check asterisks
+```{r}
+db5.global.2nd.prot.df = data.frame(db5.global.2nd.prot)
+head(db5.global.2nd.prot.df)
+db5.global.2nd.prot.df$id = rownames(db5.global.2nd.prot.df)
+names(db5.global.2nd.prot.df)[1] = "prot"
+
+nrow(db5.global.2nd.prot.df)
+db5.global.2nd.prot.df %>% filter(str_detect(prot, "\\*")) %>% nrow()
+temp = db5.global.2nd.prot.df %>% filter(str_detect(prot, "\\*")) %>% pull(id)
+length(temp)
+head(temp)
+```
+
+### remove asterisks
+```{r}
+db5.global.2nd.prot.df = db5.global.2nd.prot.df %>% filter(!str_detect(prot, "\\*"))
+nrow(db5.global.2nd.prot.df)
+```
+
+### save nonumts fasta
+```{r}
+db5.global.nonumts = db5.global[names(db5.global) %in% db5.global.2nd.prot.df$id]
+db5.global.nonumts
+
+writeXStringSet(db5.global.nonumts, "./results/global/db5.global.nonumts.fa") # double check
+```
+
+### save rdata
+```{r}
+system.time(fastSave::save.image.pigz("./results/global/db5_nonumts_global.RData", n.cores = 8))
+```
+
+### Session info
+```{r}
+sessioninfo::session_info(pkgs="attached")
+```
+
+## MAPUC
+### define mism function for MAPUC
+```{r}
+mism <- function(x,sh) { # x is object taxa level, sh is df from map uc
+  uc_mism =c()
+  a = rev(x)[1]
+  # Species
+  temp = sh
+  temp$V9_2 = str_replace(temp$V9_2, paste0(".*", a), "") %>% str_replace(";:.*", "")
+  temp$V10_2 = str_replace(temp$V10_2, paste0(".*", a), "") %>% str_replace(";:.*", "")
+  b = length(which(temp$V10_2 != temp$V9_2)) # mismatch dataframe for each taxa level
+  c = sub(",", "", a)
+  c = sub(":", "", c)
+  d = data.frame("tax_lev"=c, "nos.mismatch" = b)
+  uc_mism = rbind(uc_mism, d)
+  uc_mism_s = temp[which(temp$V10_2 != temp$V9_2),]
+  
+  # Genus
+  a = rev(x)[2]
+  temp = sh
+  temp$V9_2 = str_replace(temp$V9_2, paste0(".*", a), "") %>% str_replace(",s:.*", "")
+  temp$V10_2 = str_replace(temp$V10_2, paste0(".*", a), "") %>% str_replace(",s:.*", "")
+  b = length(which(temp$V10_2 != temp$V9_2))
+  c = sub(",", "", a)
+  c = sub(":", "", c)
+  d = data.frame("tax_lev"=c, "nos.mismatch" = b)
+  uc_mism = rbind(uc_mism, d)
+  uc_mism_g = temp[which(temp$V10_2 != temp$V9_2), ]
+  
+  # Family
+  a = rev(x)[3]
+  temp = sh
+  temp$V9_2 = str_replace(temp$V9_2, paste0(".*", a), "") %>% str_replace(",g:.*", "")
+  temp$V10_2 = str_replace(temp$V10_2, paste0(".*", a), "") %>% str_replace(",g:.*", "")
+  b = length(which(temp$V10_2 != temp$V9_2))
+  c = sub(",", "", a)
+  c = sub(":", "", c)
+  d = data.frame("tax_lev"=c, "nos.mismatch" = b)
+  uc_mism = rbind(uc_mism, d)
+  uc_mism_f = temp[which(temp$V10_2 != temp$V9_2), ]
+  
+  # Order
+  a = rev(x)[4]
+  temp = sh
+  temp$V9_2 = str_replace(temp$V9_2, paste0(".*", a), "") %>% str_replace(",f:.*", "")
+  temp$V10_2 = str_replace(temp$V10_2, paste0(".*", a), "") %>% str_replace(",f:.*", "")
+  b = length(which(temp$V10_2 != temp$V9_2))
+  c = sub(",", "", a)
+  c = sub(":", "", c)
+  d = data.frame("tax_lev"=c, "nos.mismatch" = b)
+  uc_mism = rbind(uc_mism, d)
+  uc_mism_o = temp[which(temp$V10_2 != temp$V9_2), ]
+  
+  uc_mism_list = list("mism_df"      = uc_mism,
+                      "mism_species" = uc_mism_s,
+                      "mism_genus"   = uc_mism_g,
+                      "mism_family"  = uc_mism_f,
+                      "mism_order"   = uc_mism_o)
+
+  print(uc_mism)
+  return (uc_mism_list)
+  # rm(uc_mism, temp, a,b,c,d, uc_mism_s, uc_mism_g, uc_mism_f, uc_mism_o, uc_mism_list)
+}
+```
+
+### import mapuc file
+```{r}
+mapuc = read.delim("./results/global/db5.global.nonumts.uniq.uc", header = FALSE)
+mapuc_seed = mapuc %>% select(V1, V9) %>% filter(V1 == "S")
+unique(mapuc_seed$V1) # check what they are, there are only S not H and C
+mapuc_hit = mapuc %>% select(V1, V9, V10) %>% filter(V1 == "H")
+unique(mapuc_hit$V1) # check what they are, there are only H
+
+# V1 = S/H/C
+# v9 = label_taxa
+# v10 = Label of target sequence (H records only)
+# V9_2 = V9
+# V10_2 = V10
+mapuc_hit$V9_2 = sub(".*tax=", "", mapuc_hit$V9)
+mapuc_hit$V10_2 = sub(".*tax=", "", mapuc_hit$V10)
+taxa = c(",o:", ",f:", ",g:", ",s:")
+mapuc_mism = mism(taxa, mapuc_hit)
+```
+
+### Dropping_seq
+**Drop or remove entries that belong to clusters that have multiple species**
+```{r}
+temp = unique(mapuc_mism$mism_species$V10)
+str(temp)
+head(temp)
+
+db5.global.uniq = readDNAStringSet("./results/global/db5.global.nonumts.uniq.fa") # usearch fastx output
+db5.global.uniq
+db5.global.uniq.df = data.frame(db5.global.uniq)
+db5.global.uniq.df$taxa = db5.global.uniq@ranges@NAMES
+
+head(db5.global.uniq.df)
+head(db5.global.uniq.df$taxa)
+db5.global.uniq.df$taxa = str_replace(db5.global.uniq.df$taxa, "size=.*", "")
+head(db5.global.uniq.df$taxa)
+db5.global.uniq.df$taxa = str_replace(db5.global.uniq.df$taxa, " ;", " ")
+head(db5.global.uniq.df$taxa)
+
+head(temp)
+nrow(db5.global.uniq.df) ; length(temp)
+
+db5.global.uniq.df = subset(db5.global.uniq.df, !(taxa %in% temp)) # dropping bad sequences
+nrow(db5.global.uniq.df)
+```
+
+```{r}
+# reformat for blast ---
+head(db5.global.uniq.df$taxa)
+db5.global.uniq.df$taxa = str_replace_all(db5.global.uniq.df$taxa, "; ", " ") # replace semicolumn+space with space
+db5.global.uniq.df$taxa = str_replace_all(db5.global.uniq.df$taxa, ";", " ") # replace semicolumn with space
+db5.global.uniq.df$taxa = str_replace_all(db5.global.uniq.df$taxa, ",", " ") # replace comma with space
+head(db5.global.uniq.df$taxa)
+# reformat for blast ===
+```
+
+### save to fasta
+```{r}
+temp = DNAStringSet(db5.global.uniq.df$db5.global.uniq)
+names(temp) = db5.global.uniq.df$taxa
+temp
+range(temp@ranges@width)
+writeXStringSet(temp, "./results/global/db5.global.nonumts.uniq.mapuc.fa") # double check
+rm(temp)
+```
+
+### save rdata
+```{r}
+gc()
+system.time(fastSave::save.image.pigz("./results/global/db5_nonumts_global.RData", n.cores = 8))
+```
+
+
+# Assign taxonomy
+## blastn
+```{bash}
+## local
+/lustre/work/hsihaloh/software/ncbi-blast-2.15.0+/bin/blastn -num_threads 16 \
+-query ./otus_finalize/otus97.final.300.nonumts.fa \
+-db ./blast_db/db5.local -evalue 1e-4 \
+-out ./blast_db_results/db5.local.out \
+-outfmt "6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore salltitles" &
+
+
+wc -l blast_db_results/db5.local.out
+# 1,251,855 blast_db_results/db5.local.out
+
+cat blast_db_results/db5.local.out | sort -nk 12 -r -nk 3 | awk '!seen[$1]++' > blast_db_results/db5.local.out.top
+wc -l blast_db_results/db5.local.out.top
+# 3041
+# 3058-3041 = 17 ### Notes: 17 otus were not assigned on db5.local
+
+
+## regional
+/lustre/work/hsihaloh/software/ncbi-blast-2.15.0+/bin/blastn -num_threads 16 \
+-query ./otus_finalize/otus97.final.300.nonumts.fa \
+-db ./blast_db/db5.regional -evalue 1e-4 \
+-out ./blast_db_results/db5.regional.out \
+-outfmt "6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore salltitles" &
+      
+wc -l blast_db_results/db5.regional.out
+# 1352349 blast_db_results/db5.regional.out
+
+cat blast_db_results/db5.regional.out | sort -nk 12 -r -nk 3 | awk '!seen[$1]++' > blast_db_results/db5.regional.out.top
+wc -l blast_db_results/db5.regional.out.top
+# 3045
+# 3058-3045 = ### Notes: 13 Otus were not assigned on db5.regional
+
+
+## global
+/lustre/work/hsihaloh/software/ncbi-blast-2.15.0+/bin/blastn -num_threads 16 \
+-query ./otus_finalize/otus97.final.300.nonumts.fa \
+-db ./blast_db/db5.global -evalue 1e-4 \
+-out ./blast_db_results/db5.global.out \
+-outfmt "6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore salltitles" &
+
+wc -l blast_db_results/db5.global.out
+# 1517017 blast_db_results/db5.global.out
+
+cat blast_db_results/db5.global.out | sort -nk 12 -r -nk 3 | awk '!seen[$1]++' > blast_db_results/db5.global.out.top
+wc -l blast_db_results/db5.global.out.top
+# 3056
+# 3058-3056  = 2 ### Notes: 2 OTUs were not assigned on db5.global
+```
+
+
+## tblastx
+```{bash}
+## local
+/lustre/work/hsihaloh/software/ncbi-blast-2.15.0+/bin/tblastx -num_threads 16 \
+-query ./otus_finalize/otus97.final.300.nonumts.fa \
+-db ./blast_db/db5.local -evalue 1e-4 \
+-out ./blast_db_results/tblastx.db5.local.out \
+-outfmt "6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore salltitles" &
+
+wc -l ./blast_db_results/tblastx.db5.local.out
+# 10,146,458 ./blast_db_results/tblastx.db5.local.out
+
+cat ./blast_db_results/tblastx.db5.local.out | sort -nk 12 -r -nk 3 | awk '!seen[$1]++' > ./blast_db_results/tblastx.db5.local.out.top
+wc -l ./blast_db_results/tblastx.db5.local.out.top
+# 3058, ### Notes: all OTUs were assigned on db4.local
+
+
+## regional
+/lustre/work/hsihaloh/software/ncbi-blast-2.15.0+/bin/tblastx -num_threads 16 \
+-query ./otus_finalize/otus97.final.300.nonumts.fa \
+-db ./blast_db/db5.regional -evalue 1e-4 \
+-out ./blast_db_results/tblastx.db5.regional.out \
+-outfmt "6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore salltitles" &
+      
+wc -l ./blast_db_results/tblastx.db5.regional.out
+# 10,280,968 ./blast_db_results/tblastx.db5.regional.out
+
+cat ./blast_db_results/tblastx.db5.regional.out | sort -nk 12 -r -nk 3 | awk '!seen[$1]++' > ./blast_db_results/tblastx.db5.regional.out.top
+wc -l ./blast_db_results/tblastx.db5.regional.out.top
+# 3058 ### Notes: all OTUs were assigned on db4.regional
+
+
+## global
+/lustre/work/hsihaloh/software/ncbi-blast-2.15.0+/bin/tblastx -num_threads 16 \
+-query ./otus_finalize/otus97.final.300.nonumts.fa \
+-db ./blast_db/db5.global -evalue 1e-4 \
+-out ./blast_db_results/tblastx.db5.global.out \
+-outfmt "6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore salltitles" &
+
+wc -l ./blast_db_results/tblastx.db5.global.out
+# 10821515
+
+cat ./blast_db_results/tblastx.db5.global.out | sort -nk 12 -r -nk 3 | awk '!seen[$1]++' > ./blast_db_results/tblastx.db5.global.out.top
+wc -l ./blast_db_results/tblastx.db5.global.out.top
+# 3058 ### Notes: all OTUs were assigned on db4.global
+```
+

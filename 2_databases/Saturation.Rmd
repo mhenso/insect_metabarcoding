@@ -1,0 +1,616 @@
+---
+title: "Saturation"
+output:
+  html_notebook:
+    code_folding: show
+    df_print: paged
+    fig_width: 12
+    fig_height: 8
+    fig_caption: yes
+    toc: yes
+    toc_depth: 6
+    toc_float:
+      collapsed: no
+---
+
+```{css, echo=FALSE}
+.scroll-200 {
+  max-height: 200px;
+  overflow-y: auto;
+  background-color: inherit;
+}
+```
+
+```{css, echo=FALSE}
+.tocify .tocify-header {
+  #position: fixed;
+  #top: 50px;
+  #left: 50px;
+  width: 350px;
+  #height: 400px;
+  }
+```
+
+```{r}
+suppressPackageStartupMessages({
+  library(tidyverse)
+  library(parallel)
+  library(fastSave)
+})
+```
+
+# LOCAL & REGIONAL
+## load
+```{r}
+system.time(fastSave::load.pigz("./save_afa.RData"))
+```
+
+## define function
+### calc_TS
+```{r}
+calc_ts <- function(seq_set, num_cores = detectCores() - 1) {
+  require(parallel)
+  require(Biostrings)
+  
+  # Convert DNAStringSet to character vector
+  seqs <- as.character(seq_set)
+  n <- length(seqs)
+  
+  # Function to compute pairwise TN93 distance with edge case handling
+  pairwise_TN <- function(seq1, seq2) {
+    if (nchar(seq1) != nchar(seq2)) stop("Sequences must be the same length")
+    
+    # Convert sequences to vectors
+    s1 <- unlist(strsplit(seq1, ""))
+    s2 <- unlist(strsplit(seq2, ""))
+    
+    # Remove positions with gaps ('-')
+    valid_sites <- which(s1 != "-" & s2 != "-")
+    
+    # If no valid sites remain, return a large distance (or NA)
+    if (length(valid_sites) == 0) return(NA)
+    
+    s1 <- s1[valid_sites]
+    s2 <- s2[valid_sites]
+    
+    # Identify differences
+    transitions1 <- sum((s1 == "A" & s2 == "G") | (s1 == "G" & s2 == "A"))
+    transitions2 <- sum((s1 == "C" & s2 == "T") | (s1 == "T" & s2 == "C"))
+    
+    # Sum the transitions and divide to the length
+    P1 <- sum(transitions1 + transitions2)
+    
+    return(P1)
+  }
+
+  # Create a function for the pairwise distance calculation, for use in parallel
+  calc_distances <- function(i) {
+    temp <- c()
+    for (j in 1:(i - 1)) {
+      dist_value <- pairwise_TN(seqs[i], seqs[j])
+      temp = c(temp, dist_value)
+    }
+    return(temp)
+  }
+
+  # Use mclapply to parallelize the loop
+  results <- mclapply(2:n, calc_distances, mc.cores = num_cores)
+
+  # Combine the results into a single vector
+  results_combined <- unlist(results)
+
+  return(results_combined)
+}
+```
+
+
+### calc_TV
+```{r}
+calc_tv <- function(seq_set, num_cores = detectCores() - 1) {
+  require(parallel)
+  require(Biostrings)
+  
+  # Convert DNAStringSet to character vector
+  seqs <- as.character(seq_set)
+  n <- length(seqs)
+  seq_length <- nchar(seqs[1])  # Assume all sequences are of equal length
+  
+  # Function to compute pairwise TV distance with edge case handling
+  pairwise_TV <- function(seq1, seq2) {
+    if (nchar(seq1) != nchar(seq2)) stop("Sequences must be the same length")
+    
+    # Convert sequences to vectors
+    s1 <- unlist(strsplit(seq1, ""))
+    s2 <- unlist(strsplit(seq2, ""))
+    # Remove positions with gaps ('-')
+    valid_sites <- which(s1 != "-" & s2 != "-")
+    # If no valid sites remain, return a large distance (or NA)
+    if (length(valid_sites) == 0) return(NA)
+    s1 <- s1[valid_sites]
+    s2 <- s2[valid_sites]
+    
+    # Identify differences
+    transversions <- sum((s1 != s2) & !((s1 == "A" & s2 == "G") | 
+                                          (s1 == "G" & s2 == "A") | 
+                                          (s1 == "C" & s2 == "T") | 
+                                          (s1 == "T" & s2 == "C")))
+    # calculate proportions of the transversions
+    Q <- transversions
+    return(Q)
+  }
+  
+  # Create a function for the pairwise distance calculation, for use in parallel
+  calc_distances <- function(i) {
+    temp <- c()
+    for (j in 1:(i - 1)) {
+      dist_value <- pairwise_TV(seqs[i], seqs[j])
+      temp = c(temp, dist_value)
+    }
+    return(temp)
+  }
+
+  # Use mclapply to parallelize the loop
+  results <- mclapply(2:n, calc_distances, mc.cores = num_cores)
+
+  # Combine the results into a single vector
+  results_combined <- unlist(results)
+
+  return(results_combined)
+}
+```
+
+
+## Local
+### calc TS, TV
+```{r}
+system.time(local <- data.frame(TS = calc_ts(db5.local.final.afa, num_cores = 120)))
+system.time(local$TV <- calc_tv(db5.local.final.afa, num_cores = 120))
+```
+
+### calc RAW/319, ratio (rel), filter
+```{r}
+local$raw = local$TS + local$TV
+local$raw319 =local$raw/319
+local$rel = round(local$TS/local$TV, 4)
+head(local)
+
+local2 = local %>% filter(TV>0)
+head(local2)
+```
+
+## Regional
+### calc TS, TV
+```{r}
+system.time(regional <- data.frame(TS = calc_ts(db5.regional.final.afa, num_cores = 120)))
+system.time(regional$TV <- calc_tv(db5.regional.final.afa, num_cores = 120))
+```
+
+### calc RAW/319 and ratio (rel), filter
+```{r}
+regional$raw = regional$TS + regional$TV
+regional$raw319 = regional$raw/319
+regional$rel = round(regional$TS/regional$TV, 4)
+head(regional)
+
+regional2 = regional %>% filter(TV>0)
+head(regional2)
+```
+
+
+## LM
+### Local
+```{r}
+summary(lm(rel ~ I(raw319^1), data=local2))
+```
+
+
+### Regional
+```{r}
+summary(lm(rel ~ I(raw319^1), data=regional2))
+```
+
+## Save RData
+```{r}
+system.time(fastSave::save.image.pigz(file="saturation_loc&reg.RData", n.cores = 8))
+```
+
+
+# GLOBAL
+**Note: Better restart the R before running below codes**
+## clearing
+```{r}
+rm(list=ls())
+gc()
+```
+
+```{r}
+rstudioapi::executeCommand("restartR")
+```
+
+```{r}
+suppressPackageStartupMessages({
+  library(tidyverse)
+  library(parallel)
+  library(fastSave)
+})
+```
+
+## load
+```{r}
+system.time(fastSave::load.pigz("./save_afa.RData"))
+```
+
+```{r}
+rm(list=grep("db5.global.final.afa", ls(), value = TRUE, invert=TRUE))
+gc()
+```
+
+## Define functions
+### sample_pairwise
+```{r}
+sample_pairwise <- function(n, sample_size, output_file = "sampled_pairs.txt", num_cores = parallel::detectCores() - 1, seed = NULL) {
+  require(parallel)
+  
+  if (!is.null(seed)) set.seed(seed)
+  
+  # Ensure output file is clean
+  if (file.exists(output_file)) file.remove(output_file)
+  
+  # Divide sample size across cores
+  samples_per_core <- ceiling(sample_size / num_cores)
+  chunk_sizes <- rep(samples_per_core, num_cores)
+  chunk_sizes[num_cores] <- sample_size - samples_per_core * (num_cores - 1)
+
+  # Create temp directory
+  temp_dir <- tempfile("sampled_chunks_")
+  dir.create(temp_dir)
+
+  # Worker function to generate and write sampled pairs
+  sample_block <- function(chunk_id, chunk_size) {
+    temp_file <- file.path(temp_dir, paste0("chunk_", chunk_id, ".txt"))
+    con <- file(temp_file, open = "wt")
+
+    set.seed(seed + chunk_id)  # ensure reproducibility per core
+
+    count <- 0
+    while (count < chunk_size) {
+      i <- sample.int(n - 1, 1)
+      j <- sample((i + 1):n, 1)
+      writeLines(paste(i, j), con)
+      count <- count + 1
+    }
+
+    close(con)
+    return(temp_file)
+  }
+
+  # Run in parallel
+  temp_files <- mclapply(seq_along(chunk_sizes), function(i) {
+    sample_block(i, chunk_sizes[i])
+  }, mc.cores = num_cores)
+
+  # Merge outputs
+  for (f in temp_files) {
+    file.append(output_file, f)
+    file.remove(f)
+  }
+
+  unlink(temp_dir, recursive = TRUE)
+  invisible(NULL)
+}
+```
+
+### compute_TS
+```{r}
+compute_TS <- function(seq_set,
+                       pair_file   = "sampled_pairs.txt",
+                       output_file = "pairwise_sampled_transitions.txt",
+                       num_cores   = parallel::detectCores() - 1) {
+  require(parallel)
+  require(Biostrings)
+
+  seqs <- as.character(seq_set)
+
+  # Read index pairs
+  index_pairs <- read.table(pair_file, header = FALSE,
+                            col.names = c("i", "j"))
+
+  # Transition distance function
+  pairwise_TN <- function(seq1, seq2) {
+    if (nchar(seq1) != nchar(seq2)) stop("Sequences must be the same length")
+    s1 <- strsplit(seq1, "")[[1]]
+    s2 <- strsplit(seq2, "")[[1]]
+    valid <- which(s1 != "-" & s2 != "-")
+    if (length(valid) == 0) return(NA)
+    s1 <- s1[valid]; s2 <- s2[valid]
+    transitions <- sum((s1 == "A" & s2 == "G") | (s1 == "G" & s2 == "A") |
+                       (s1 == "C" & s2 == "T") | (s1 == "T" & s2 == "C"))
+    transitions
+  }
+
+  # Remove old output file if it exists
+  if (file.exists(output_file)) file.remove(output_file)
+
+  # Create temp directory
+  temp_dir <- tempfile("ts_sampled_chunks_")
+  dir.create(temp_dir)
+
+  # Split pairs into chunks per core
+  total_pairs <- nrow(index_pairs)
+  pair_chunks <- split(index_pairs,
+                       cut(seq_len(total_pairs), num_cores, labels = FALSE))
+
+  # Worker function
+  calc_block <- function(pair_chunk, chunk_id) {
+    temp_file <- file.path(temp_dir, paste0("chunk_", chunk_id, ".txt"))
+    con <- file(temp_file, open = "wt", encoding = "UTF-8")
+    for (k in seq_len(nrow(pair_chunk))) {
+      i <- pair_chunk$i[k]
+      j <- pair_chunk$j[k]
+      dist_val <- pairwise_TN(seqs[i], seqs[j])
+      writeLines(as.character(dist_val), con)
+    }
+    close(con)
+    temp_file
+  }
+
+  # Run in parallel
+  temp_files <- mclapply(seq_along(pair_chunks),
+                         function(i) calc_block(pair_chunks[[i]], i),
+                         mc.cores = num_cores)
+
+  # Combine output
+  for (f in temp_files) {
+    file.append(output_file, f)
+    file.remove(f)
+  }
+
+  unlink(temp_dir, recursive = TRUE)
+  invisible(NULL)
+}
+```
+
+
+### compute_TV
+```{r}
+compute_TV <- function(seq_set,
+                       pair_file     = "sampled_pairs.txt",
+                       output_file   = "pairwise_sampled_transversions.txt",
+                       num_cores     = parallel::detectCores() - 1) {
+  require(parallel)
+  require(Biostrings)
+  seqs <- as.character(seq_set)
+
+  # Read index pairs from file
+  index_pairs <- read.table(pair_file, header = FALSE, col.names = c("i", "j"))
+
+  # Transversion count function
+  pairwise_TV <- function(seq1, seq2) {
+    if (nchar(seq1) != nchar(seq2)) stop("Sequences must be the same length")
+    s1 <- strsplit(seq1, "")[[1]]
+    s2 <- strsplit(seq2, "")[[1]]
+    valid <- which(s1 != "-" & s2 != "-")
+    if (length(valid) == 0) return(NA)
+    s1 <- s1[valid]; s2 <- s2[valid]
+    sum((s1 != s2) & !(
+      (s1 == "A" & s2 == "G") | (s1 == "G" & s2 == "A") |
+      (s1 == "C" & s2 == "T") | (s1 == "T" & s2 == "C")
+    ))
+  }
+
+  # Remove old output file if it exists
+  if (file.exists(output_file)) file.remove(output_file)
+
+  # Create temp directory
+  temp_dir <- tempfile("tv_sampled_chunks_")
+  dir.create(temp_dir)
+
+  # Split pairs into chunks for each core
+  total_pairs <- nrow(index_pairs)
+  pair_chunks <- split(index_pairs,
+                       cut(seq_len(total_pairs), num_cores, labels = FALSE))
+
+  # Worker: compute one chunk and write to a temp file
+  calc_block <- function(pair_chunk, chunk_id) {
+    tmp <- file.path(temp_dir, paste0("chunk_", chunk_id, ".txt"))
+    con <- file(tmp, open = "wt", encoding = "UTF-8")
+    for (k in seq_len(nrow(pair_chunk))) {
+      i <- pair_chunk$i[k]
+      j <- pair_chunk$j[k]
+      dist_val <- pairwise_TV(seqs[i], seqs[j])
+      writeLines(as.character(dist_val), con)
+    }
+    close(con)
+    tmp
+  }
+
+  # Run in parallel
+  temp_files <- mclapply(seq_along(pair_chunks),
+                         function(i) calc_block(pair_chunks[[i]], i),
+                         mc.cores = num_cores)
+
+  # Merge results and clean up
+  for (f in temp_files) {
+    file.append(output_file, f)
+    file.remove(f)
+  }
+  unlink(temp_dir, recursive = TRUE)
+
+  invisible(NULL)
+}
+```
+
+```{r}
+length(db5.global.final.afa)
+```
+
+## Run the functions
+### sample_pairwise
+```{r}
+system.time(sample_pairwise(
+  n = 726899,
+  sample_size = 1e9,
+  num_cores = 64,
+  seed = 123,
+  output_file = "pairs_1e9.txt"
+))
+```
+
+### compute_TV
+```{r}
+gc()
+```
+
+```{r}
+system.time(compute_TV(
+  seq_set = db5.global.final.afa,
+  pair_file = "pairs_1e9.txt",
+  output_file = "tv.txt",
+  num_cores = 64
+))
+```
+
+###compute_TS
+```{r}
+gc()
+```
+
+```{r}
+system.time(compute_TS(
+  seq_set = db5.global.final.afa,
+  pair_file = "pairs_1e9.txt",
+  output_file = "ts.txt",
+  num_cores = 64
+))
+```
+
+## LM
+### clearing
+```{r}
+rm(list=ls())
+gc()
+```
+
+```{r}
+rstudioapi::executeCommand("restartR")
+```
+
+```{r}
+suppressPackageStartupMessages({
+  library(tidyverse)
+  library(parallel)
+  library(fastSave)
+})
+```
+
+
+```{r}
+system.time(ts <- read.table("./ts.txt"))
+colnames(ts) = "ts"
+
+tv = read.table("./tv.txt")
+colnames(tv) = "tv"
+
+raw = data.frame(raw = ts$ts + tv$tv)
+rel = data.frame(rel = round(ts$ts/tv$tv, 4))
+```
+
+### calc RAW/319, ratio (rel), filter
+```{r}
+temp = which(tv$tv > 0)
+raw2 = raw %>% filter(row_number() %in% temp)
+raw2 = round(raw2/319, 4)
+
+rel2 = rel %>% filter(row_number() %in% temp)
+```
+
+```{r}
+rm(ts, tv, raw, rel, temp)
+gc()
+```
+
+```{r}
+summary(lm(rel2$rel ~ I(raw2$raw^1)))
+```
+
+# SLOPE
+```{r}
+rstudioapi::executeCommand("restartR")
+```
+
+```{r}
+suppressPackageStartupMessages({
+  library(tidyverse)
+  library(parallel)
+  library(fastSave)
+})
+```
+
+# Slopes Comparison
+## LOC vs REG
+```{r}
+# Extract slopes and standard errors
+b1 <- 0.0935712
+SE1 <- 0.0005414
+
+b2 <- 1.963e-01
+SE2 <- 2.677e-04
+
+# Compute t-test statistic
+t_value <- (b1 - b2) / sqrt(SE1^2 + SE2^2)
+# df <- length(data$y) - 4  # Approximate degrees of freedom
+# df <- nrow(local2) + nrow(regional2) - 4  # Approximate degrees of freedom
+
+df = 64645906 + 258467403 # Notes: no need to substract 4 because for each summary the df was already substracted -2
+p_value <- 2 * pt(-abs(t_value), df)
+
+cat("t-value:", t_value, "\n")
+cat("p-value:", p_value, "\n")
+```
+
+## LOC vs GLO
+```{r}
+# Extract slopes and standard errors
+b1 <- 0.0935712
+SE1 <- 0.0005414
+
+b2 <- 1.667e-02
+SE2 <- 1.399e-04
+
+# Compute t-test statistic
+t_value <- (b1 - b2) / sqrt(SE1^2 + SE2^2)
+df = 64645906 + 999975172
+p_value <- 2 * pt(-abs(t_value), df)
+
+cat("t-value:", t_value, "\n")
+cat("p-value:", p_value, "\n")
+```
+
+## REG vs GLO
+```{r}
+# Extract slopes and standard errors
+b1 <- 1.963e-01
+SE1 <- 2.677e-04
+
+b2 <- 1.667e-02
+SE2 <- 1.399e-04
+
+# Compute t-test statistic
+t_value <- (b1 - b2) / sqrt(SE1^2 + SE2^2)
+df = 258467403 + 999975172
+p_value <- 2 * pt(-abs(t_value), df)
+
+cat("t-value:", t_value, "\n")
+cat("p-value:", p_value, "\n")
+```
+
+
+```{r}
+rm(b1, b2, df, SE1, SE2, p_value, t_value)
+gc()
+```
+
+# Session info
+```{r}
+sessioninfo::session_info(pkgs="attached")
+```

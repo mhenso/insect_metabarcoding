@@ -1,0 +1,222 @@
+---
+title: "Create alignment file (afa) for final databases"
+output:
+  html_notebook:
+    code_folding: show
+    df_print: paged
+    fig_width: 12
+    fig_height: 8
+    fig_caption: yes
+    toc: yes
+    toc_depth: 6
+    toc_float:
+      collapsed: no
+---
+
+```{css, echo=FALSE}
+.scroll-200 {
+  max-height: 200px;
+  overflow-y: auto;
+  background-color: inherit;
+}
+```
+
+```{css, echo=FALSE}
+.tocify .tocify-header {
+  #position: fixed;
+  #top: 50px;
+  #left: 50px;
+  width: 350px;
+  #height: 400px;
+  }
+```
+
+```{r}
+suppressPackageStartupMessages({
+  library(Biostrings)
+  library(tidyverse)
+  library(ape)
+  library(parallel)
+})
+```
+
+
+
+
+# LOCAL
+## import final local.fa
+```{r}
+db5.local.final = readDNAStringSet("./results/local/db5.local.final.fa")
+db5.local.final
+```
+
+```{r}
+db5.local.final.df = data.frame(db5.local.final)
+db5.local.final.df$id = rownames(db5.local.final.df)
+rownames(db5.local.final.df) = NULL
+head(db5.local.final.df$id)
+
+db5.local.final.df$id = sub(" tax.*", "", db5.local.final.df$id)
+head(db5.local.final.df$id)
+nrow(db5.local.final.df)
+db5.local.final.df %>% pull(id) %>% sort() %>% unique() %>% length()
+# 11372 there is no different number
+```
+
+## import min300.afa
+```{r}
+db5.local.afa = readDNAStringSet("./results/local/db5.local.min300.afa")
+db5.local.afa
+```
+
+## subset the afa to final ids
+```{r}
+temp = data.frame(id = names(db5.local.afa))
+temp$id = sub(";tax.*", "", temp$id)
+
+length(db5.local.afa)
+temp %>% pull(id) %>% sort() %>% unique() %>% length()
+# there is no different number
+names(db5.local.afa) = temp$id ; rm(temp)
+db5.local.afa
+
+db5.local.final.afa = db5.local.afa[db5.local.final.df$id]
+db5.local.final.afa
+```
+
+## clear
+```{r}
+rm(db5.local.afa, db5.local.final, db5.local.final.df)
+```
+
+## save
+```{r}
+writeXStringSet(db5.local.final.afa, "./results/local/db5.local.final.afa")
+```
+
+## bash
+```{bash}
+~/seqkit seq -w 0 ./results/local/db5.local.final.afa > temp && mv temp ./results/local/db5.local.final.afa
+```
+
+
+
+# REGIONAL
+## import final regional.fa
+```{r}
+db5.regional.final = readDNAStringSet("./results/regional/db5.regional.final.fa")
+db5.regional.final
+```
+
+```{r}
+db5.regional.final.df = data.frame(db5.regional.final)
+db5.regional.final.df$id = rownames(db5.regional.final.df)
+rownames(db5.regional.final.df) = NULL
+head(db5.regional.final.df$id)
+
+db5.regional.final.df$id = sub(" tax.*", "", db5.regional.final.df$id)
+head(db5.regional.final.df$id)
+nrow(db5.regional.final.df)
+db5.regional.final.df %>% pull(id) %>% sort() %>% unique() %>% length()
+# 22,738 there is no different number
+```
+
+## import min300.afa
+```{r}
+db5.regional.afa = readDNAStringSet("./results/regional/db5.regional.min300.afa")
+db5.regional.afa
+```
+
+## subset the afa to final ids
+```{r}
+temp = data.frame(id = names(db5.regional.afa))
+temp$id = sub(";tax.*", "", temp$id)
+
+length(db5.regional.afa)
+temp %>% pull(id) %>% sort() %>% unique() %>% length()
+# there is no different number
+names(db5.regional.afa) = temp$id ; rm(temp)
+db5.regional.afa
+
+db5.regional.final.afa = db5.regional.afa[db5.regional.final.df$id]
+db5.regional.final.afa
+```
+
+## clear
+```{r}
+rm(db5.regional.afa, db5.regional.final, db5.regional.final.df)
+```
+
+## save
+```{r}
+writeXStringSet(db5.regional.final.afa, "./results/regional/db5.regional.final.afa")
+```
+
+## bash
+```{bash}
+~/seqkit seq -w 0 ./results/regional/db5.regional.final.afa > temp && mv temp ./results/regional/db5.regional.final.afa
+```
+
+
+# GLOBAL
+## import final global.fa
+```{r}
+db5.global.final <- readDNAStringSet("./results/global/db5.global.final.fa")
+db5.global.final
+```
+
+```{r}
+db5.global.final.df = data.frame(db5.global.final)
+db5.global.final.df$id = rownames(db5.global.final.df)
+rownames(db5.global.final.df) = NULL
+head(db5.global.final.df$id)
+
+db5.global.final.df$id = sub(" tax.*", "", db5.global.final.df$id)
+head(db5.global.final.df$id)
+nrow(db5.global.final.df)
+db5.global.final.df %>% pull(id) %>% sort() %>% unique() %>% length()
+# 726,899 there is no different number
+```
+
+
+## import min300.afa
+```{r}
+db5.global.afa <- readDNAStringSet("./results/global/db5.global.min300.afa")
+db5.global.afa
+```
+
+## subset the afa to final ids
+```{r}
+temp = data.frame(id = names(db5.global.afa))
+temp$id = sub(";tax.*", "", temp$id)
+
+length(db5.global.afa)
+temp %>% pull(id) %>% sort() %>% unique() %>% length()
+# 2,484,568 there is no different number
+names(db5.global.afa) = temp$id ; rm(temp)
+db5.global.afa
+
+db5.global.final.afa = db5.global.afa[db5.global.final.df$id]
+db5.global.final.afa
+```
+
+## clear
+```{r}
+rm(db5.global.afa, db5.global.final, db5.global.final.df)
+```
+
+## save
+```{r}
+writeXStringSet(db5.global.final.afa, "./results/global/db5.global.final.afa")
+```
+
+## bash
+```{bash}
+~/seqkit seq -w 0 ./results/global/db5.global.final.afa > temp && mv temp ./results/global/db5.global.final.afa
+```
+
+# Save RData
+```{r}
+system.time(fastSave::save.image.pigz("./save_afa.RData", n.cores = 8))
+```
+
