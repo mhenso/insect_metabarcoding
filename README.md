@@ -37,7 +37,7 @@ This project goal was identifying the number of subsamples required to detect to
 
 * OTUs pipeline for external dataset.
 
-  * [Shell_scripting](https://github.com/mhenso/insect_metabarcoding/blob/main/4_cutadapt_external_dataset/notes_zizka_cutadapt_subsample.sh) Using usearch and R
+  * [Shell_scripting](https://github.com/mhenso/insect_metabarcoding/blob/main/4_cutadapt_external_dataset/notes_cutadapt_external_subsample.sh) Using usearch and R
  
   * [Remove NUMTS](https://mhenso.github.io/insect_metabarcoding/4_cutadapt_external_dataset/otus_numts.nb.html)
  
