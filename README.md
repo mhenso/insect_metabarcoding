@@ -1,6 +1,6 @@
 # Optimizing Methods for Insect Metabarcoding
 
-![](./docs/Figure_41.png)
+![](./docs/Figure_4.png)
 
 ## Introduction
 This project goal was identifying the number of subsamples required to detect total estimated insect OTU diversity in a light trap.
