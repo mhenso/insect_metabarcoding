@@ -1,1 +1,3 @@
 This folder contain raw reads that can be dowloaded from NCBI
+PRJNA1260500 http://www.ncbi.nlm.nih.gov/bioproject/1260500
+
